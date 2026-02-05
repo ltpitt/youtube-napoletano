@@ -5,7 +5,14 @@ import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, render_template_string, request, stream_with_context
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    render_template_string,
+    request,
+    stream_with_context,
+)
 
 
 app = Flask(__name__)
@@ -14,9 +21,11 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 # Path to timestamp file for update tracking
-UPDATE_TIMESTAMP_FILE = Path('/tmp/yt-dlp-last-update.txt')
-YTDLP_PATH = '/var/services/homes/pitto/.local/bin/yt-dlp'
-PYTHON_PATH = '/var/services/homes/pitto/scripts/youtube_napoletano/.venv/bin/python3.12'
+UPDATE_TIMESTAMP_FILE = Path("/tmp/yt-dlp-last-update.txt")
+YTDLP_PATH = "/var/services/homes/pitto/.local/bin/yt-dlp"
+PYTHON_PATH = (
+    "/var/services/homes/pitto/scripts/youtube_napoletano/.venv/bin/python3.12"
+)
 
 
 def should_update_ytdlp():
@@ -38,48 +47,50 @@ def update_ytdlp():
 
     try:
         subprocess.run(
-            [PYTHON_PATH, YTDLP_PATH, '-U'],
+            [PYTHON_PATH, YTDLP_PATH, "-U"],
             capture_output=True,
             timeout=30,
-            check=False  # Don't fail if update fails
+            check=False,  # Don't fail if update fails
         )
         UPDATE_TIMESTAMP_FILE.write_text(datetime.now().isoformat())
-        app.logger.info('yt-dlp updated successfully')
+        app.logger.info("yt-dlp updated successfully")
     except Exception as e:
-        app.logger.warning(f'yt-dlp update failed (continuing anyway): {e}')
+        app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
 
 
 def parse_progress(line):
     """Parse yt-dlp output to extract progress information"""
     # Match pattern like: [download] 100.0% of   10.17MiB at    6.05MiB/s ETA 00:00
     match = re.search(
-        r'\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)\s+at\s+(\d+\.?\d*\w+iB/s)\s+ETA\s+(\d+:\d+)',
-        line
+        r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)\s+at\s+(\d+\.?\d*\w+iB/s)\s+ETA\s+(\d+:\d+)",
+        line,
     )
     if match:
         return {
-            'percent': match.group(1),
-            'size': match.group(2),
-            'speed': match.group(3),
-            'eta': match.group(4)
+            "percent": match.group(1),
+            "size": match.group(2),
+            "speed": match.group(3),
+            "eta": match.group(4),
         }
-    
+
     # Fallback pattern when speed is not available (early in download)
-    match_simple = re.search(r'\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)', line)
+    match_simple = re.search(
+        r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)", line
+    )
     if match_simple:
         return {
-            'percent': match_simple.group(1),
-            'size': match_simple.group(2),
-            'speed': 'N/A',
-            'eta': 'N/A'
+            "percent": match_simple.group(1),
+            "size": match_simple.group(2),
+            "speed": "N/A",
+            "eta": "N/A",
         }
-    
+
     return None
 
 
-@app.route('/')
+@app.route("/")
 def index():
-    return render_template_string('''
+    return render_template_string("""
 <!doctype html>
 <html lang="en">
 <head>
@@ -330,133 +341,161 @@ def index():
     </script>
 </body>
 </html>
-    ''')
+    """)
 
 
-@app.route('/download_stream')
+@app.route("/download_stream")
 def download_stream():
     """Stream download progress using Server-Sent Events"""
-    video_url = request.args.get('url')
-    audio_only = request.args.get('audio_only') == 'true'
-    output_dir = '/volume1/video/Youtube-Napoletano'
+    video_url = request.args.get("url")
+    audio_only = request.args.get("audio_only") == "true"
+    output_dir = "/volume1/video/Youtube-Napoletano"
 
     def generate():
         try:
-            command = [PYTHON_PATH, YTDLP_PATH, '--newline', '-o', f'{output_dir}/%(title)s.%(ext)s', video_url]
+            command = [
+                PYTHON_PATH,
+                YTDLP_PATH,
+                "--newline",
+                "-o",
+                f"{output_dir}/%(title)s.%(ext)s",
+                video_url,
+            ]
 
             if audio_only:
-                command.extend(['-f', 'bestaudio/best', '-x', '--audio-format', 'mp3', '--audio-quality', '0'])
+                command.extend(
+                    [
+                        "-f",
+                        "bestaudio/best",
+                        "-x",
+                        "--audio-format",
+                        "mp3",
+                        "--audio-quality",
+                        "0",
+                    ]
+                )
 
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
-                bufsize=1
+                bufsize=1,
             )
 
-            for line in iter(process.stdout.readline, ''):
+            for line in iter(process.stdout.readline, ""):
                 if not line:
                     break
 
                 line = line.strip()
-                app.logger.debug(f'yt-dlp output: {line}')
+                app.logger.debug(f"yt-dlp output: {line}")
 
                 # Parse progress
                 progress = parse_progress(line)
                 if progress:
                     data = json.dumps(progress)
                     yield f"event: progress\ndata: {data}\n\n"
-                    
+
                     # When we hit 100%, notify that post-processing may follow
-                    if float(progress['percent']) >= 99.9:
-                        msg = json.dumps({'message': 'Scarricamento cumpletato, sto pulizianno...'})
+                    if float(progress["percent"]) >= 99.9:
+                        msg = json.dumps(
+                            {"message": "Scarricamento cumpletato, sto pulizianno..."}
+                        )
                         yield f"event: status\ndata: {msg}\n\n"
 
                 # Check for post-processing status (universal patterns)
-                if '[Merger]' in line:
-                    msg = json.dumps({'message': 'Sto azzeccanno \'e piezze...'})
+                if "[Merger]" in line:
+                    msg = json.dumps({"message": "Sto azzeccanno 'e piezze..."})
                     yield f"event: status\ndata: {msg}\n\n"
-                elif '[ExtractAudio]' in line or '[ffmpeg]' in line:
-                    msg = json.dumps({'message': 'Sto cunvertenno...'})
+                elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
+                    msg = json.dumps({"message": "Sto cunvertenno..."})
                     yield f"event: status\ndata: {msg}\n\n"
-                elif '[download] Destination:' in line:
-                    msg = json.dumps({'message': 'Sto scarricanno...'})
+                elif "[download] Destination:" in line:
+                    msg = json.dumps({"message": "Sto scarricanno..."})
                     yield f"event: status\ndata: {msg}\n\n"
-                elif 'Deleting original file' in line or 'Removing original file' in line:
-                    msg = json.dumps({'message': 'Sto pulizianno...'})
+                elif (
+                    "Deleting original file" in line or "Removing original file" in line
+                ):
+                    msg = json.dumps({"message": "Sto pulizianno..."})
                     yield f"event: status\ndata: {msg}\n\n"
 
             process.wait()
 
             if process.returncode == 0:
-                msg = json.dumps({'message': "'O scarricamento è fernuto!"})
+                msg = json.dumps({"message": "'O scarricamento è fernuto!"})
                 yield f"event: complete\ndata: {msg}\n\n"
             else:
-                err = json.dumps({'error': "'O scarricamento s'è arricettato"})
+                err = json.dumps({"error": "'O scarricamento s'è arricettato"})
                 yield f"event: error_event\ndata: {err}\n\n"
 
         except Exception as e:
-            app.logger.error(f'Download stream error: {str(e)}')
-            err = json.dumps({'error': str(e)})
+            app.logger.error(f"Download stream error: {str(e)}")
+            err = json.dumps({"error": str(e)})
             yield f"event: error_event\ndata: {err}\n\n"
 
-    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 
-@app.route('/download', methods=['POST'])
+@app.route("/download", methods=["POST"])
 def download_video():
-    video_url = request.form['url']
-    audio_only = 'audio_only' in request.form
-    output_dir = '/volume1/video/Youtube-Napoletano'
-    format_option = 'bestaudio/best' if audio_only else None
-    postprocessor_args = ['-x', '--audio-format', 'mp3', '--audio-quality', '0'] if audio_only else []
+    video_url = request.form["url"]
+    audio_only = "audio_only" in request.form
+    output_dir = "/volume1/video/Youtube-Napoletano"
+    format_option = "bestaudio/best" if audio_only else None
+    postprocessor_args = (
+        ["-x", "--audio-format", "mp3", "--audio-quality", "0"] if audio_only else []
+    )
 
     try:
-        command = [PYTHON_PATH, YTDLP_PATH, '-o', f'{output_dir}/%(title)s.%(ext)s', video_url]
+        command = [
+            PYTHON_PATH,
+            YTDLP_PATH,
+            "-o",
+            f"{output_dir}/%(title)s.%(ext)s",
+            video_url,
+        ]
         if format_option:
-            command.insert(1, '-f')
+            command.insert(1, "-f")
             command.insert(2, format_option)
         command.extend(postprocessor_args)
 
-        subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        app.logger.info('Download successful')
-        return jsonify({'message': "'O scarricamento è fernuto!"})
+        subprocess.run(command, capture_output=True, text=True, check=True)
+        app.logger.info("Download successful")
+        return jsonify({"message": "'O scarricamento è fernuto!"})
     except subprocess.CalledProcessError as e:
-        app.logger.error(f'Download failed: {e.stderr}')
-        return jsonify({'error': "'O scarricamento s'è arricettato", 'details': e.stderr}), 500
+        app.logger.error(f"Download failed: {e.stderr}")
+        return jsonify(
+            {"error": "'O scarricamento s'è arricettato", "details": e.stderr}
+        ), 500
 
 
-@app.route('/update', methods=['POST'])
+@app.route("/update", methods=["POST"])
 def update():
     """Manual yt-dlp update endpoint"""
     try:
         subprocess.run(
-            [PYTHON_PATH, YTDLP_PATH, '-U'],
+            [PYTHON_PATH, YTDLP_PATH, "-U"],
             capture_output=True,
             text=True,
             timeout=60,
-            check=True
+            check=True,
         )
-        app.logger.info('yt-dlp update successful')
+        app.logger.info("yt-dlp update successful")
         # Update timestamp file
         UPDATE_TIMESTAMP_FILE.write_text(datetime.now().isoformat())
-        return jsonify({'message': 'yt-dlp aggiurnato cu successo!'})
+        return jsonify({"message": "yt-dlp aggiurnato cu successo!"})
     except subprocess.TimeoutExpired:
-        app.logger.error('yt-dlp update timed out')
-        return jsonify({'error': "'O tiempo è fernuto (timeout)"}), 500
+        app.logger.error("yt-dlp update timed out")
+        return jsonify({"error": "'O tiempo è fernuto (timeout)"}), 500
     except subprocess.CalledProcessError as e:
-        app.logger.error(f'yt-dlp update failed: {e.stderr}')
-        return jsonify({'error': "'O aggiurnamiento s'è arricettato", 'details': e.stderr}), 500
+        app.logger.error(f"yt-dlp update failed: {e.stderr}")
+        return jsonify(
+            {"error": "'O aggiurnamiento s'è arricettato", "details": e.stderr}
+        ), 500
     except Exception as e:
-        app.logger.error(f'Unexpected error during update: {str(e)}')
-        return jsonify({'error': "Errore curiouso dint' all'aggiurnamiento"}), 500
+        app.logger.error(f"Unexpected error during update: {str(e)}")
+        return jsonify({"error": "Errore curiouso dint' all'aggiurnamiento"}), 500
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8443)
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=8443)
