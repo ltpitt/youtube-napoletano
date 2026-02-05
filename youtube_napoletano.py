@@ -17,10 +17,10 @@ from flask import (
 
 app = Flask(__name__)
 
-# Configure logging
+# Set up verbose logging for easier debugging and monitoring
 logging.basicConfig(level=logging.DEBUG)
 
-# Path to timestamp file for update tracking
+# Store the last yt-dlp update timestamp to avoid unnecessary updates
 UPDATE_TIMESTAMP_FILE = Path("/tmp/yt-dlp-last-update.txt")
 YTDLP_PATH = "/var/services/homes/pitto/.local/bin/yt-dlp"
 PYTHON_PATH = (
@@ -37,6 +37,7 @@ def should_update_ytdlp():
         last_update = datetime.fromisoformat(UPDATE_TIMESTAMP_FILE.read_text().strip())
         return datetime.now() - last_update > timedelta(days=1)
     except Exception:
+        # If the timestamp file is corrupted or unreadable, force an update
         return True
 
 
@@ -50,17 +51,18 @@ def update_ytdlp():
             [PYTHON_PATH, YTDLP_PATH, "-U"],
             capture_output=True,
             timeout=30,
-            check=False,  # Don't fail if update fails
+            check=False,  # We want the app to keep working even if the update fails
         )
         UPDATE_TIMESTAMP_FILE.write_text(datetime.now().isoformat())
         app.logger.info("yt-dlp updated successfully")
     except Exception as e:
+        # Log the failure but don't interrupt the user experience
         app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
 
 
 def parse_progress(line):
-    """Parse yt-dlp output to extract progress information"""
-    # Match pattern like: [download] 100.0% of   10.17MiB at    6.05MiB/s ETA 00:00
+    """Parse yt-dlp output to extract progress information for the UI"""
+    # This regex matches the most detailed yt-dlp progress output (with speed and ETA)
     match = re.search(
         r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)\s+at\s+(\d+\.?\d*\w+iB/s)\s+ETA\s+(\d+:\d+)",
         line,
@@ -73,7 +75,7 @@ def parse_progress(line):
             "eta": match.group(4),
         }
 
-    # Fallback pattern when speed is not available (early in download)
+    # yt-dlp sometimes omits speed/ETA early in the download; handle that gracefully
     match_simple = re.search(
         r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)", line
     )
@@ -390,20 +392,20 @@ def download_stream():
                 line = line.strip()
                 app.logger.debug(f"yt-dlp output: {line}")
 
-                # Parse progress
+                # Try to extract progress info for the frontend progress bar
                 progress = parse_progress(line)
                 if progress:
                     data = json.dumps(progress)
                     yield f"event: progress\ndata: {data}\n\n"
 
-                    # When we hit 100%, notify that post-processing may follow
+                    # When download is essentially complete, warn user that post-processing may take extra time
                     if float(progress["percent"]) >= 99.9:
                         msg = json.dumps(
                             {"message": "Scarricamento cumpletato, sto pulizianno..."}
                         )
                         yield f"event: status\ndata: {msg}\n\n"
 
-                # Check for post-processing status (universal patterns)
+                # Detect post-processing steps to keep user informed about what's happening
                 if "[Merger]" in line:
                     msg = json.dumps({"message": "Sto azzeccanno 'e piezze..."})
                     yield f"event: status\ndata: {msg}\n\n"
@@ -481,10 +483,11 @@ def update():
             check=True,
         )
         app.logger.info("yt-dlp update successful")
-        # Update timestamp file
+        # Record the update time so we can avoid redundant updates in the future
         UPDATE_TIMESTAMP_FILE.write_text(datetime.now().isoformat())
         return jsonify({"message": "yt-dlp aggiurnato cu successo!"})
     except subprocess.TimeoutExpired:
+        # yt-dlp update can hang if network is slow or unavailable
         app.logger.error("yt-dlp update timed out")
         return jsonify({"error": "'O tiempo è fernuto (timeout)"}), 500
     except subprocess.CalledProcessError as e:
