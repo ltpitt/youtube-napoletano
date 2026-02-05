@@ -92,6 +92,7 @@ def parse_progress(line):
 
 @app.route("/")
 def index():
+    # Look at me, I'm a lazy, ugly person that spits raw HTML from a string!
     return render_template_string("""
 <!doctype html>
 <html lang="en">
