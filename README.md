@@ -6,11 +6,11 @@
 ## About
 
 **youtube-napoletano** is a web service for downloading YouTube videos and audio, powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp) and Flask.  
-It’s designed to help you skip the boring, annoying ads and get straight to the content you want—fast, simple, and with a smile.
+It’s designed to help you skip the boring, annoying ads and get straight to the content you want. Fast, simple, and with a smile.
 
 ### Why "Napoletano"?
 
-Naples is famous for its creativity and street smarts—qualities that inspired this project’s clever approach to YouTube downloads.  
+Naples is famous for its creativity and street smarts qualities that inspired this project’s clever approach to YouTube downloads.  
 The name is a playful tribute, not meant to offend, but to celebrate the legendary ingenuity of Neapolitan people.  
 If you’re from Naples or just love a good workaround, we hope you’ll smile at the spirit behind the name!
 

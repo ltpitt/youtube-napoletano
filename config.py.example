@@ -1,0 +1,19 @@
+import os
+from pathlib import Path
+
+# Example configuration for youtube-napoletano
+# Copy this file to config.py and adjust as needed
+
+YTDLP_PATH = os.getenv("YTDLP_PATH", str(Path.home() / ".local/bin/yt-dlp"))
+PYTHON_PATH = os.getenv(
+    "PYTHON_PATH",
+    str(Path.home() / "Code/youtube-napoletano/.venv/bin/python3.12")
+)
+OUTPUT_DIR = os.getenv(
+    "OUTPUT_DIR",
+    "/volume1/video/Youtube-Napoletano"
+)
+UPDATE_TIMESTAMP_FILE = os.getenv(
+    "UPDATE_TIMESTAMP_FILE",
+    "/tmp/yt-dlp-last-update.txt"
+)
