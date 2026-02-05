@@ -23,13 +23,10 @@ jobs:
           .venv/bin/pip install -r requirements.txt
       - name: Lint with ruff
         run: |
-          source .venv/bin/activate
           .venv/bin/ruff check .
       - name: Format with ruff
         run: |
-          source .venv/bin/activate
           .venv/bin/ruff format . --check
       - name: Run tests
         run: |
-          source .venv/bin/activate
           .venv/bin/pytest
