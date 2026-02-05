@@ -1,5 +1,6 @@
 # youtube-napoletano
 
+[![CI](https://github.com/ltpitt/youtube-napoletano/actions/workflows/ci.yml/badge.svg)](https://github.com/ltpitt/youtube-napoletano/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
