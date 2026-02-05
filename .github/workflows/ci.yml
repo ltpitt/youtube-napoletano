@@ -31,4 +31,4 @@ jobs:
           .venv/bin/ruff format . --check
       - name: Run tests
         run: |
-          .venv/bin/pytest
+          .venv/bin/python -m pytest
