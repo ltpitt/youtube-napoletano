@@ -21,6 +21,8 @@ jobs:
           source .venv/bin/activate
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
       - name: Lint with ruff
         run: |
           .venv/bin/ruff check .
