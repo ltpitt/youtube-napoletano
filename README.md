@@ -96,4 +96,14 @@ Please open an issue first to discuss what you would like to change.
 
 ---
 
+## Troubleshooting
+
+If downloads suddenly stop working or you see errors related to YouTube extraction, it's likely that YouTube has updated their site. In most cases, updating `yt-dlp` will resolve the issue.
+
+- **Recommended:** Use the "Update yt-dlp" button in the web interface. This is the easiest and safest way to update.
+
+If problems persist, check the [yt-dlp GitHub page](https://github.com/yt-dlp/yt-dlp) for updates or open an issue.
+
+---
+
 _This project is for educational and personal use. Please respect YouTube’s Terms of Service and your local laws._
