@@ -32,11 +32,8 @@ jobs:
       - name: Debug: Show sys.path
         run: .venv/bin/python -c "import sys; print(sys.path)"
       - name: Lint with ruff
-        run: |
-          .venv/bin/ruff check .
+        run: .venv/bin/ruff check .
       - name: Format with ruff
-        run: |
-          .venv/bin/ruff format . --check
+        run: .venv/bin/ruff format . --check
       - name: Run tests
-        run: |
-          .venv/bin/python -m pytest
+        run: .venv/bin/python -m pytest
