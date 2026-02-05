@@ -24,12 +24,12 @@ jobs:
       - name: Lint with ruff
         run: |
           source .venv/bin/activate
-          ruff check .
+          .venv/bin/ruff check .
       - name: Format with ruff
         run: |
           source .venv/bin/activate
-          ruff format . --check
+          .venv/bin/ruff format . --check
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest
+          .venv/bin/pytest
