@@ -1,5 +1,5 @@
-import pytest
 from downloader import parse_progress
+
 
 def test_parse_progress_full():
     line = "[download] 42.0% of 10.00MiB at 2.00MiB/s ETA 00:10"
@@ -11,6 +11,7 @@ def test_parse_progress_full():
         "eta": "00:10",
     }
 
+
 def test_parse_progress_simple():
     line = "[download] 10.0% of 1.00MiB"
     result = parse_progress(line)
@@ -20,6 +21,7 @@ def test_parse_progress_simple():
         "speed": "N/A",
         "eta": "N/A",
     }
+
 
 def test_parse_progress_none():
     line = "[other] something else"

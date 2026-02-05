@@ -1,12 +1,3 @@
-# Professional Makefile for youtube-napoletano
-# Usage:
-#   make install   - Create venv and install dependencies (default: VENV=.venv)
-#   make run       - Run the app using the venv
-#   make lint      - Lint code with ruff (requires venv and ruff)
-#   make format    - Format code with ruff (requires venv and ruff)
-#   make clean     - Remove venv and __pycache__ folders
-#   make help      - Show this help
-#
 # You can override the venv name: make VENV=myenv install
 
 .PHONY: help run install lint format clean ruff-check
@@ -38,7 +29,10 @@ install:
 	$(VENV)/bin/pip install -r requirements.txt
 
 lint: ruff-check
-	$(VENV)/bin/ruff check .
+	$(VENV)/bin/ruff check --fix .
+
+format: ruff-check
+	$(VENV)/bin/ruff format .
 
 ruff-check:
 	@if [ ! -x "$(VENV)/bin/ruff" ]; then \
