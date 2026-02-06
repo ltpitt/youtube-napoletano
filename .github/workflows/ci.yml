@@ -23,14 +23,6 @@ jobs:
           .venv/bin/pip install -r requirements.txt
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-      - name: List files in repo root
-        run: ls -l
-      - name: List files in tests/
-        run: ls -l tests
-      - name: Print PYTHONPATH
-        run: echo $PYTHONPATH
-      - name: Show sys.path
-        run: .venv/bin/python -c "import sys; print(sys.path)"
       - name: Lint with ruff
         run: .venv/bin/ruff check .
       - name: Format with ruff

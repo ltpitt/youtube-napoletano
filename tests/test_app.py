@@ -1,6 +1,6 @@
 import pytest
 
-from youtube_napoletano import app
+from youtube_napoletano.app import app
 
 
 @pytest.fixture
