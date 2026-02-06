@@ -38,7 +38,7 @@ These instructions help Copilot and agents work optimally with this repository.
 - Install dependencies: `python3.12 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt`
 - Lint: `make lint` or `.venv/bin/ruff check .`
 - Format: `make format` or `.venv/bin/ruff format .`
-- Test: `make test` or `pytest` (ensure venv is activated).
+- Test: `make test` or `.venv/bin/python -m pytest` (ensure venv is activated).
 - Run: `make run` or `.venv/bin/python youtube_napoletano.py`
 - Clean: `make clean` or remove .venv and __pycache__ folders.
 - All pushes and PRs must pass CI (lint, format, test).

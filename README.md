@@ -79,6 +79,7 @@ Then open [http://localhost:8443](http://localhost:8443) in your browser.
 
 - **Lint:** `make lint` or `.venv/bin/ruff check .`
 - **Format:** `make format` or `.venv/bin/ruff format .`
+- **Test:** `make test` or `.venv/bin/python -m pytest`
 - **Install deps:** `make install` or `python3.12 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt`
 - **Clean:** `make clean` or `find . -type d -name "__pycache__" -exec rm -rf {} + && rm -rf .venv`
 
