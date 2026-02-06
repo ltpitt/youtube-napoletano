@@ -23,6 +23,8 @@ jobs:
           .venv/bin/pip install -r requirements.txt
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+      - name: Copy config.py.example to youtube_napoletano/config.py
+        run: cp config.py.example youtube_napoletano/config.py
       - name: Lint with ruff
         run: .venv/bin/ruff check .
       - name: Format with ruff
