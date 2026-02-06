@@ -4,14 +4,24 @@ These instructions help Copilot and agents work optimally with this repository.
 
 ## Project Overview
 - This repository is a modular Flask web app for downloading YouTube videos and audio using yt-dlp.
-- Main files:
-  - youtube_napoletano.py: Flask app entry point, routes, Neapolitan messages.
-  - downloader.py: yt-dlp logic and progress parsing.
-  - utils.py: update checks and helpers.
-  - config.py: configuration (paths, environment).
-  - tests/: pytest test suite for all modules.
-  - templates/: HTML templates.
-  - static/: JS and static assets.
+- Package structure:
+  - youtube_napoletano/: Main Python package
+    - app.py: Flask app, routes, Neapolitan messages
+    - downloader.py: yt-dlp logic and progress parsing
+    - utils.py: update checks and helpers
+    - config.py: configuration (paths, environment)
+  - youtube_napoletano.py: Entry point script (imports from package)
+  - tests/: pytest test suite for all modules
+  - templates/: HTML templates
+  - static/: JS and static assets
+  - config.py.example: Example configuration file
+
+## Imports & Structure
+- All core logic is in the `youtube_napoletano/` package
+- Use absolute imports: `from youtube_napoletano.module import function`
+- Tests import from the package: `from youtube_napoletano.downloader import parse_progress`
+- Entry point (youtube_napoletano.py) imports app from package
+- Configuration lives in youtube_napoletano/config.py (copy from config.py.example)
 
 ## Coding Standards
 - Always use Test-Driven Development (TDD): write tests before implementing features.
@@ -55,9 +65,11 @@ These instructions help Copilot and agents work optimally with this repository.
 - Keep functions small and focused.
 
 ## Common Pitfalls
-- yt-dlp path: must point to .venv/bin/yt-dlp (see config.py).
-- venv activation: always activate before running commands.
-- Makefile quirks: VENV variable can be overridden.
+- yt-dlp path: must point to .venv/bin/yt-dlp (see youtube_napoletano/config.py)
+- venv activation: always activate before running commands
+- Makefile quirks: VENV variable can be overridden
+- Import structure: use `from youtube_napoletano.module import ...` for all package imports
+- Config file: copy config.py.example to youtube_napoletano/config.py before running
 
 ## Contribution Etiquette
 - Encourage clear, descriptive PRs and issues.

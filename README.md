@@ -84,7 +84,19 @@ Then open [http://localhost:8443](http://localhost:8443) in your browser.
 
 ## Configuration
 
-- Edit paths in [youtube_napoletano.py](youtube_napoletano.py) if needed (yt-dlp, output directory, etc).
+Copy `config.py.example` to `youtube_napoletano/config.py` and adjust paths as needed:
+
+```sh
+cp config.py.example youtube_napoletano/config.py
+```
+
+Configuration options:
+- `YTDLP_PATH`: Path to yt-dlp executable (default: `.venv/bin/yt-dlp`)
+- `PYTHON_PATH`: Path to Python executable (default: `.venv/bin/python3`)
+- `OUTPUT_DIR`: Download directory (default: `./downloads`)
+- `UPDATE_TIMESTAMP_FILE`: Path to yt-dlp update timestamp file
+
+You can also set these via environment variables.
 
 ## Contributing
 

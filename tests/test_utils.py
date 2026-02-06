@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from utils import should_update_ytdlp
+
+from youtube_napoletano.utils import should_update_ytdlp
 
 
 def test_should_update_ytdlp_new_file(tmp_path):

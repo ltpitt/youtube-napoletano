@@ -1,4 +1,4 @@
-from downloader import parse_progress
+from youtube_napoletano.downloader import parse_progress
 
 
 def test_parse_progress_full():

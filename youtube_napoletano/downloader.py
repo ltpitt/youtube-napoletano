@@ -1,8 +1,11 @@
 import subprocess
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, Optional
+
 from flask import current_app
-from config import PYTHON_PATH, YTDLP_PATH, UPDATE_TIMESTAMP_FILE
-from typing import Optional, Dict
+
+from youtube_napoletano.config import PYTHON_PATH, UPDATE_TIMESTAMP_FILE, YTDLP_PATH
 
 
 def run_yt_dlp_command(
@@ -46,7 +49,7 @@ def parse_progress(line: str) -> Optional[Dict[str, str]]:
 def update_ytdlp() -> None:
     try:
         run_yt_dlp_command([PYTHON_PATH, YTDLP_PATH, "-U"], timeout=30, check=False)
-        UPDATE_TIMESTAMP_FILE.write_text(datetime.now().isoformat())
+        Path(UPDATE_TIMESTAMP_FILE).write_text(datetime.now().isoformat())
         current_app.logger.info("yt-dlp updated successfully")
     except Exception as e:
         current_app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")

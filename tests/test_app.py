@@ -1,4 +1,5 @@
 import pytest
+
 from youtube_napoletano import app
 
 
@@ -16,8 +17,8 @@ def test_index(client):
 
 
 def test_update_endpoint(client, monkeypatch):
-    monkeypatch.setattr("downloader.update_ytdlp", lambda: None)
-    monkeypatch.setattr("utils.should_update_ytdlp", lambda x: True)
+    monkeypatch.setattr("youtube_napoletano.downloader.update_ytdlp", lambda: None)
+    monkeypatch.setattr("youtube_napoletano.utils.should_update_ytdlp", lambda x: True)
     resp = client.post("/update")
     assert resp.status_code == 200
     assert (
