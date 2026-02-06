@@ -206,4 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Project-specific
 config.py
+yt-dlp-last-update.txt
