@@ -14,8 +14,9 @@ document.getElementById('downloadForm').onsubmit = function(event) {
     var formData = new FormData(this);
     var url = formData.get('url');
     var audioOnly = formData.get('audio_only') ? 'true' : 'false';
+    var subtitles = formData.get('subtitles') ? 'true' : 'false';
     
-    var eventSource = new EventSource('/download_stream?url=' + encodeURIComponent(url) + '&audio_only=' + audioOnly);
+    var eventSource = new EventSource('/download_stream?url=' + encodeURIComponent(url) + '&audio_only=' + audioOnly + '&subtitles=' + subtitles);
     
     eventSource.addEventListener('progress', function(e) {
         var data = JSON.parse(e.data);

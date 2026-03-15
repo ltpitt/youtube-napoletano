@@ -49,6 +49,7 @@ def download_stream() -> Response:
             f"event: error_event\ndata: {err}\n\n", mimetype="text/event-stream"
         )
     audio_only: bool = request.args.get("audio_only") == "true"
+    subtitles: bool = request.args.get("subtitles") == "true"
     output_dir: str = OUTPUT_DIR
 
     def generate() -> Generator[str, None, None]:
@@ -73,6 +74,8 @@ def download_stream() -> Response:
                         "0",
                     ]
                 )
+            if subtitles:
+                command.extend(["--write-sub", "--write-auto-sub"])
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
@@ -131,6 +134,7 @@ def download_video() -> Any:
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
         return jsonify({"error": "URL nun valida. Miette nu link YouTube buono!"}), 400
     audio_only: bool = "audio_only" in request.form
+    subtitles: bool = "subtitles" in request.form
     output_dir: str = OUTPUT_DIR
     format_option: str | None = "bestaudio/best" if audio_only else None
     postprocessor_args: list[str] = (
@@ -145,9 +149,10 @@ def download_video() -> Any:
             video_url,
         ]
         if format_option:
-            command.insert(1, "-f")
-            command.insert(2, format_option)
+            command.extend(["-f", format_option])
         command.extend(postprocessor_args)
+        if subtitles:
+            command.extend(["--write-sub", "--write-auto-sub"])
         run_yt_dlp_command(command)
         app.logger.info("Download successful")
         return jsonify({"message": "'O scarricamento è fernuto!"})
