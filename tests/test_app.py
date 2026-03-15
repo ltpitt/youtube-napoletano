@@ -70,3 +70,53 @@ def test_download_with_subtitles_passes_flags(client, monkeypatch):
     assert resp.status_code == 200
     assert "--write-sub" in captured["command"]
     assert "--write-auto-sub" in captured["command"]
+
+
+def test_download_stream_with_subtitles_passes_flags(client, monkeypatch):
+    import subprocess as _subprocess
+
+    captured = {}
+
+    class FakePopen:
+        def __init__(self, command, **kwargs):
+            captured["command"] = command
+            self.stdout = iter([])
+            self.returncode = 0
+
+        def wait(self):
+            pass
+
+    monkeypatch.setattr(_subprocess, "Popen", FakePopen)
+    resp = client.get(
+        "/download_stream"
+        "?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        "&audio_only=false&subtitles=true"
+    )
+    resp.get_data()  # consume stream to trigger the generator
+    assert "--write-sub" in captured.get("command", [])
+    assert "--write-auto-sub" in captured.get("command", [])
+
+
+def test_download_audio_only_flags_after_ytdlp_path(client, monkeypatch):
+    """Regression: -f and audio flags must appear after YTDLP_PATH, not before it."""
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        import subprocess
+
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr("youtube_napoletano.downloader.run_yt_dlp_command", fake_run)
+    resp = client.post(
+        "/download",
+        data={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "audio_only": "on"},
+    )
+    assert resp.status_code == 200
+    cmd = captured["command"]
+    # YTDLP_PATH is always at index 1; -f must appear after it
+    from youtube_napoletano.config import YTDLP_PATH
+
+    assert cmd.index("-f") > cmd.index(YTDLP_PATH), "-f must come after YTDLP_PATH"
+    assert "-x" in cmd
+    assert "--audio-format" in cmd

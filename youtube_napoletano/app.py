@@ -149,8 +149,7 @@ def download_video() -> Any:
             video_url,
         ]
         if format_option:
-            command.insert(1, "-f")
-            command.insert(2, format_option)
+            command.extend(["-f", format_option])
         command.extend(postprocessor_args)
         if subtitles:
             command.extend(["--write-sub", "--write-auto-sub"])
