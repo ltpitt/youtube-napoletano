@@ -22,6 +22,16 @@ def client():
         yield client
 
 
+@pytest.fixture(autouse=True)
+def clean_download_states():
+    """Ensure _download_states is empty before and after every test."""
+    with _downloads_lock:
+        _download_states.clear()
+    yield
+    with _downloads_lock:
+        _download_states.clear()
+
+
 # ---------------------------------------------------------------------------
 # Helper: a minimal FakePopen whose stdout.readline() behaves correctly
 # ---------------------------------------------------------------------------
@@ -181,7 +191,8 @@ def test_download_stream_emits_download_started(client, monkeypatch):
 def test_download_status_not_found(client):
     resp = client.get("/status/nonexistent-id")
     assert resp.status_code == 404
-    assert b"Download non trovato" in resp.data
+    body = resp.get_json()
+    assert "truvato" in body["error"]
 
 
 def test_download_status_in_progress(client):
@@ -272,7 +283,7 @@ def test_download_stream_reconnect_not_found(client):
     resp = client.get("/download_stream?download_id=unknown-id")
     data = resp.get_data(as_text=True)
     assert "event: error_event" in data
-    assert "Download non trovato" in data
+    assert "truvato" in data
 
 
 # ---------------------------------------------------------------------------

@@ -41,6 +41,29 @@ YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$"
 _download_states: dict[str, dict] = {}
 _downloads_lock = threading.Lock()
 
+# Completed download states are evicted from memory after this many seconds.
+_STATE_TTL_SECONDS = 3600
+
+# Maximum number of yt-dlp output lines buffered in a download's queue.
+# Line events are dropped (without blocking) once the limit is reached; the
+# shared state-dict snapshot is always kept current.  Terminal events
+# (complete / error / done) are also attempted non-blocking and _drain_queue
+# falls back to the state dict so that a reconnecting client never misses them.
+_QUEUE_MAXSIZE = 100
+
+
+def _schedule_eviction(download_id: str) -> None:
+    """Remove a finished download from ``_download_states`` after the TTL."""
+
+    def _evict() -> None:
+        with _downloads_lock:
+            _download_states.pop(download_id, None)
+            app.logger.debug(f"Evicted download state {download_id}")
+
+    timer = threading.Timer(_STATE_TTL_SECONDS, _evict)
+    timer.daemon = True
+    timer.start()
+
 
 def _run_download_thread(download_id: str, command: list[str]) -> None:
     """Run yt-dlp in a background thread, posting events to a queue.
@@ -48,6 +71,11 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
     The download continues even if the SSE client disconnects (fire-and-forget).
     Progress and status are also stored in ``_download_states`` so that the GUI
     can poll or reconnect at any time and get an up-to-date snapshot.
+
+    All writes to the shared state dict are protected by ``_downloads_lock``
+    so readers always see a consistent snapshot.  Queue puts are non-blocking
+    (line events are dropped silently when the queue is full); the state dict
+    is the authoritative source of truth.
     """
     with _downloads_lock:
         state = _download_states.get(download_id)
@@ -66,33 +94,57 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
             line = line.strip()
             app.logger.debug(f"yt-dlp output: {line}")
             progress = parse_progress(line)
-            if progress:
-                state["progress"] = progress
-            if "[Merger]" in line:
-                state["last_message"] = "Sto azzeccanno 'e piezze..."
-            elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
-                state["last_message"] = "Sto cunvertenno..."
-            elif "[download] Destination:" in line:
-                state["last_message"] = "Sto scarricanno..."
-            elif "Deleting original file" in line or "Removing original file" in line:
-                state["last_message"] = "Sto pulizianno..."
-            task_queue.put(("line", line))
+            with _downloads_lock:
+                if progress:
+                    state["progress"] = progress
+                if "[Merger]" in line:
+                    state["last_message"] = "Sto azzeccanno 'e piezze..."
+                elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
+                    state["last_message"] = "Sto cunvertenno..."
+                elif "[download] Destination:" in line:
+                    state["last_message"] = "Sto scarricanno..."
+                elif (
+                    "Deleting original file" in line or "Removing original file" in line
+                ):
+                    state["last_message"] = "Sto pulizianno..."
+            try:
+                task_queue.put_nowait(("line", line))
+            except queue.Full:
+                pass  # state-dict snapshot already updated; line event dropped
         process.wait()
         if process.returncode == 0:
-            state["status"] = "complete"
-            state["last_message"] = "'O scarricamento è fernuto!"
-            task_queue.put(("complete", None))
+            with _downloads_lock:
+                state["status"] = "complete"
+                state["last_message"] = "'O scarricamento è fernuto!"
+            try:
+                task_queue.put_nowait(("complete", None))
+            except queue.Full:
+                pass  # _drain_queue will fall back to the state dict
         else:
+            with _downloads_lock:
+                state["status"] = "error"
+                state["error"] = "'O scarricamento s'è arricettato"
+            try:
+                task_queue.put_nowait(("error", "'O scarricamento s'è arricettato"))
+            except queue.Full:
+                pass
+    except Exception:
+        app.logger.error("Download thread error", exc_info=True)
+        with _downloads_lock:
             state["status"] = "error"
-            state["error"] = "'O scarricamento s'è arricettato"
-            task_queue.put(("error", "'O scarricamento s'è arricettato"))
-    except Exception as e:
-        app.logger.error(f"Download thread error: {str(e)}")
-        state["status"] = "error"
-        state["error"] = str(e)
-        task_queue.put(("error", str(e)))
+            state["error"] = "'O scarricamento s'è arricettato p' nu errore 'e sistema"
+        try:
+            task_queue.put_nowait(
+                ("error", "'O scarricamento s'è arricettato p' nu errore 'e sistema")
+            )
+        except queue.Full:
+            pass
     finally:
-        task_queue.put(("done", None))
+        try:
+            task_queue.put_nowait(("done", None))
+        except queue.Full:
+            pass
+        _schedule_eviction(download_id)
 
 
 def _line_to_sse_events(line: str) -> Generator[str, None, None]:
@@ -126,12 +178,37 @@ def _drain_queue(
     Handles client disconnect (``GeneratorExit``) gracefully: the background
     download thread is never interrupted and will run to completion regardless
     of whether any SSE client is listening.
+
+    On each queue timeout the function also consults ``_download_states`` so
+    that a reconnecting client receives the final event even when the bounded
+    queue was full and the terminal event was dropped.
     """
     try:
         while True:
             try:
-                event_type, payload = task_queue.get(timeout=30)
+                event_type, payload = task_queue.get(timeout=10)
             except queue.Empty:
+                # Check if the download already finished with a dropped terminal
+                # event (queue was at maxsize) before sending a keepalive.
+                with _downloads_lock:
+                    state = _download_states.get(download_id)
+                if state is not None:
+                    final_status = state.get("status")
+                    if final_status == "complete":
+                        msg = json.dumps(
+                            {
+                                "message": state.get("last_message")
+                                or "'O scarricamento è fernuto!"
+                            }
+                        )
+                        yield f"event: complete\ndata: {msg}\n\n"
+                        break
+                    elif final_status == "error":
+                        err_msg = (
+                            state.get("error") or "'O scarricamento s'è arricettato"
+                        )
+                        yield f"event: error_event\ndata: {json.dumps({'error': err_msg})}\n\n"
+                        break
                 yield ": keepalive\n\n"
                 continue
             if event_type == "done":
@@ -168,17 +245,16 @@ def download_status(download_id: str) -> Any:
     """
     with _downloads_lock:
         state = _download_states.get(download_id)
-    if state is None:
-        return jsonify({"error": "Download non trovato"}), 404
-    return jsonify(
-        {
+        if state is None:
+            return jsonify({"error": "'O scarricamento nun s'è truvato"}), 404
+        snapshot = {
             "status": state["status"],
             "progress": state["progress"],
             "last_message": state["last_message"],
             "error": state["error"],
             "url": state["url"],
         }
-    )
+    return jsonify(snapshot)
 
 
 @app.route("/download_stream")
@@ -204,43 +280,47 @@ def download_stream() -> Response:
         # ── Reconnect to an existing download ──────────────────────────────
         with _downloads_lock:
             state = _download_states.get(reconnect_id)
-        if state is None:
-            err = json.dumps({"error": "Download non trovato"})
-            return Response(
-                f"event: error_event\ndata: {err}\n\n",
-                mimetype="text/event-stream",
-            )
+            if state is None:
+                err = json.dumps({"error": "'O scarricamento nun s'è truvato"})
+                return Response(
+                    f"event: error_event\ndata: {err}\n\n",
+                    mimetype="text/event-stream",
+                )
+            # Take a consistent snapshot of mutable fields under the lock.
+            snap = {
+                "progress": state.get("progress"),
+                "last_message": state.get("last_message"),
+                "status": state.get("status"),
+                "error": state.get("error"),
+                "queue": state["queue"],
+            }
 
         def generate_reconnect() -> Generator[str, None, None]:
             """Emit a state snapshot, then stream live events if still running."""
-            snap_progress = state.get("progress")
-            snap_message = state.get("last_message")
-            snap_status = state.get("status")
+            if snap["progress"]:
+                yield f"event: progress\ndata: {json.dumps(snap['progress'])}\n\n"
+            if snap["last_message"]:
+                yield f"event: status\ndata: {json.dumps({'message': snap['last_message']})}\n\n"
 
-            if snap_progress:
-                yield f"event: progress\ndata: {json.dumps(snap_progress)}\n\n"
-            if snap_message:
-                yield f"event: status\ndata: {json.dumps({'message': snap_message})}\n\n"
-
-            if snap_status == "complete":
+            if snap["status"] == "complete":
                 msg = json.dumps(
-                    {"message": snap_message or "'O scarricamento è fernuto!"}
+                    {"message": snap["last_message"] or "'O scarricamento è fernuto!"}
                 )
                 yield f"event: complete\ndata: {msg}\n\n"
                 return
-            if snap_status == "error":
-                err_msg = state.get("error") or "'O scarricamento s'è arricettato"
+            if snap["status"] == "error":
+                err_msg = snap["error"] or "'O scarricamento s'è arricettato"
                 yield f"event: error_event\ndata: {json.dumps({'error': err_msg})}\n\n"
                 return
             # Still in progress – drain the live queue
-            yield from _drain_queue(reconnect_id, state["queue"])
+            yield from _drain_queue(reconnect_id, snap["queue"])
 
         return Response(
             stream_with_context(generate_reconnect()), mimetype="text/event-stream"
         )
 
     # ── New download ────────────────────────────────────────────────────────
-    video_url: str = request.args.get("url")
+    video_url: str | None = request.args.get("url")
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
         err = json.dumps({"error": "URL nun valida. Miette nu link YouTube buono!"})
         return Response(
@@ -274,7 +354,7 @@ def download_stream() -> Response:
         command.extend(["--write-sub", "--write-auto-sub"])
 
     new_id = str(uuid.uuid4())
-    task_queue: queue.Queue = queue.Queue()
+    task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
     with _downloads_lock:
         _download_states[new_id] = {
             "url": video_url,
