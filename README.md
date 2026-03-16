@@ -6,7 +6,7 @@
 
 ## About
 
-**youtube-napoletano** is a web service for downloading YouTube videos and audio, powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp) and Flask.  
+**youtube-napoletano** is a web service for downloading YouTube videos (also with subtitles) or audio only, powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp) and Flask.  
 It’s designed to help you skip the boring, annoying ads and get straight to the content you want. Fast, simple, and with a smile.
 
 ### Why "Napoletano"?
