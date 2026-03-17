@@ -26,6 +26,7 @@ def test_subtitle_download_produces_vtt_file(tmp_path):
     command = [
         PYTHON_PATH,
         YTDLP_PATH,
+        "--no-check-certificate",
         "--write-sub",
         "--write-auto-sub",
         "--skip-download",
@@ -56,6 +57,7 @@ def test_video_download_without_subtitles_still_works(tmp_path):
     command = [
         PYTHON_PATH,
         YTDLP_PATH,
+        "--no-check-certificate",
         "--skip-download",
         "--print",
         "title",
@@ -71,6 +73,7 @@ def test_audio_only_flag_still_works(tmp_path):
     command = [
         PYTHON_PATH,
         YTDLP_PATH,
+        "--no-check-certificate",
         "--simulate",
         "-f",
         "bestaudio/best",

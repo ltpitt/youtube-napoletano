@@ -18,7 +18,7 @@ from flask import (
 )
 
 from youtube_napoletano import config
-from youtube_napoletano.downloader import parse_progress, update_ytdlp
+from youtube_napoletano.downloader import parse_progress, update_ytdlp, fetch_metadata
 from youtube_napoletano.utils import should_update_ytdlp
 
 # Flask needs to find templates and static in parent directory
@@ -86,7 +86,7 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             universal_newlines=True,
             bufsize=1,
         )
@@ -111,7 +111,10 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
                 task_queue.put_nowait(("line", line))
             except queue.Full:
                 pass  # state-dict snapshot already updated; line event dropped
+        
         process.wait()
+        stderr = process.stderr.read() if process.stderr else ""
+        
         if process.returncode == 0:
             with _downloads_lock:
                 state["status"] = "complete"
@@ -121,11 +124,17 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
             except queue.Full:
                 pass  # _drain_queue will fall back to the state dict
         else:
+            err_msg = "'O scarricamento s'è arricettato"
+            err_details = ""
+            if stderr:
+                err_details = stderr.strip()[-500:]  # Last 500 chars of stderr
             with _downloads_lock:
                 state["status"] = "error"
-                state["error"] = "'O scarricamento s'è arricettato"
+                state["error"] = err_msg
+                if err_details:
+                    state["error_details"] = err_details
             try:
-                task_queue.put_nowait(("error", "'O scarricamento s'è arricettato"))
+                task_queue.put_nowait(("error", (err_msg, err_details)))
             except queue.Full:
                 pass
     except Exception:
@@ -207,7 +216,11 @@ def _drain_queue(
                         err_msg = (
                             state.get("error") or "'O scarricamento s'è arricettato"
                         )
-                        yield f"event: error_event\ndata: {json.dumps({'error': err_msg})}\n\n"
+                        err_details = state.get("error_details", "")
+                        error_data = {"error": err_msg}
+                        if err_details:
+                            error_data["details"] = err_details
+                        yield f"event: error_event\ndata: {json.dumps(error_data)}\n\n"
                         break
                 yield ": keepalive\n\n"
                 continue
@@ -218,8 +231,11 @@ def _drain_queue(
                 yield f"event: complete\ndata: {msg}\n\n"
                 break
             elif event_type == "error":
-                err = json.dumps({"error": payload})
-                yield f"event: error_event\ndata: {err}\n\n"
+                payload_msg, payload_details = payload if isinstance(payload, tuple) else (payload, "")
+                error_data = {"error": payload_msg}
+                if payload_details:
+                    error_data["details"] = payload_details
+                yield f"event: error_event\ndata: {json.dumps(error_data)}\n\n"
                 break
             elif event_type == "line":
                 yield from _line_to_sse_events(payload)
@@ -253,8 +269,29 @@ def download_status(download_id: str) -> Any:
             "last_message": state["last_message"],
             "error": state["error"],
             "url": state["url"],
+            "metadata": state.get("metadata"),
         }
     return jsonify(snapshot)
+
+
+@app.route("/metadata")
+def metadata() -> Any:
+    """Quick metadata lookup for a video URL.
+
+    Returns JSON: {title, description, thumbnail, webpage_url} or an error.
+    """
+    video_url = (request.args.get("url") or "").strip()
+    if not video_url or not YOUTUBE_URL_RE.match(video_url):
+        return (
+            jsonify({"error": "URL nun valida. Miette nu link YouTube buono!"}),
+            400,
+        )
+    try:
+        meta = fetch_metadata(video_url)
+        return jsonify({"metadata": meta})
+    except Exception as e:
+        app.logger.debug(f"Metadata fetch error: {e}")
+        return jsonify({"error": "Nun songh' riuscuto a piglià 'e metadata"}), 500
 
 
 @app.route("/download_stream")
@@ -320,7 +357,7 @@ def download_stream() -> Response:
         )
 
     # ── New download ────────────────────────────────────────────────────────
-    video_url: str | None = request.args.get("url")
+    video_url: str | None = (request.args.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
         err = json.dumps({"error": "URL nun valida. Miette nu link YouTube buono!"})
         return Response(
@@ -334,6 +371,7 @@ def download_stream() -> Response:
         PYTHON_PATH,
         YTDLP_PATH,
         "--newline",
+        "--no-check-certificate",
         "-o",
         f"{output_dir}/%(title)s.%(ext)s",
         video_url,
@@ -355,6 +393,14 @@ def download_stream() -> Response:
 
     new_id = str(uuid.uuid4())
     task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
+    # Try to fetch metadata quickly for a better UI experience. Failure
+    # shouldn't block the download so we swallow errors and proceed.
+    metadata_obj = None
+    try:
+        metadata_obj = fetch_metadata(video_url)
+    except Exception:
+        metadata_obj = None
+
     with _downloads_lock:
         _download_states[new_id] = {
             "url": video_url,
@@ -363,6 +409,7 @@ def download_stream() -> Response:
             "last_message": None,
             "error": None,
             "queue": task_queue,
+            "metadata": metadata_obj,
         }
 
     thread = threading.Thread(
@@ -384,7 +431,7 @@ def download_stream() -> Response:
 def download_video() -> Any:
     from youtube_napoletano.downloader import run_yt_dlp_command
 
-    video_url: str = request.form["url"]
+    video_url: str = (request.form.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
         return jsonify({"error": "URL nun valida. Miette nu link YouTube buono!"}), 400
     audio_only: bool = "audio_only" in request.form
@@ -398,6 +445,7 @@ def download_video() -> Any:
         command: list[str] = [
             PYTHON_PATH,
             YTDLP_PATH,
+            "--no-check-certificate",
             "-o",
             f"{output_dir}/%(title)s.%(ext)s",
             video_url,
@@ -420,13 +468,13 @@ def download_video() -> Any:
 @app.route("/update", methods=["POST"])
 def update() -> Any:
     if not should_update_ytdlp(UPDATE_TIMESTAMP_FILE):
-        return jsonify({"message": "yt-dlp is already up to date."})
+        return jsonify({"message": "yt-dlp è già aggiurnato!"})
     try:
         update_ytdlp()
-        return jsonify({"message": "yt-dlp aggiurnato cu successo!"})
+        return jsonify({"message": "yt-dlp è stato aggiurnato cu successo!"})
     except Exception as e:
         app.logger.error(f"yt-dlp update failed: {str(e)}")
-        return jsonify({"error": "Errore curiouso dint' all'aggiurnamiento"}), 500
+        return jsonify({"error": "Nu pproblemma 'e curiso int'all'aggiurnamiento"}), 500
 
 
 if __name__ == "__main__":

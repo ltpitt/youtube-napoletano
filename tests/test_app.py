@@ -41,6 +41,7 @@ class FakePopen:
     def __init__(self, command, **kwargs):
         self.command = command
         self.stdout = io.StringIO("")
+        self.stderr = io.StringIO("")
         self.returncode = 0
 
     def wait(self):
@@ -55,7 +56,7 @@ class FakePopen:
 def test_index(client):
     resp = client.get("/")
     assert resp.status_code == 200
-    assert b"YouTube Napulitano" in resp.data
+    assert b"'O Tubb napulitano" in resp.data
 
 
 def test_update_endpoint(client, monkeypatch):
@@ -63,10 +64,7 @@ def test_update_endpoint(client, monkeypatch):
     monkeypatch.setattr("youtube_napoletano.utils.should_update_ytdlp", lambda x: True)
     resp = client.post("/update")
     assert resp.status_code == 200
-    assert (
-        b"yt-dlp aggiurnato" in resp.data
-        or b"yt-dlp is already up to date" in resp.data
-    )
+    assert b"aggiurnato" in resp.data  # Either "già aggiurnato" or "stato aggiurnato"
 
 
 def test_download_stream_invalid_url(client):
