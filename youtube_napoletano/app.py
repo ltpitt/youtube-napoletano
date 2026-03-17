@@ -111,10 +111,10 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
                 task_queue.put_nowait(("line", line))
             except queue.Full:
                 pass  # state-dict snapshot already updated; line event dropped
-        
+
         process.wait()
         stderr = process.stderr.read() if process.stderr else ""
-        
+
         if process.returncode == 0:
             with _downloads_lock:
                 state["status"] = "complete"
@@ -231,7 +231,9 @@ def _drain_queue(
                 yield f"event: complete\ndata: {msg}\n\n"
                 break
             elif event_type == "error":
-                payload_msg, payload_details = payload if isinstance(payload, tuple) else (payload, "")
+                payload_msg, payload_details = (
+                    payload if isinstance(payload, tuple) else (payload, "")
+                )
                 error_data = {"error": payload_msg}
                 if payload_details:
                     error_data["details"] = payload_details

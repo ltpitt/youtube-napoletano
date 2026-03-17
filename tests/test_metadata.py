@@ -64,6 +64,7 @@ class TestMetadataEndpoint:
 
     def test_metadata_fetch_error(self, client, monkeypatch):
         """Metadata endpoint handles fetch errors gracefully."""
+
         def raise_error(url):
             raise RuntimeError("Network error")
 
@@ -79,7 +80,12 @@ class TestMetadataEndpoint:
 
     def test_metadata_whitespace_handling(self, client, monkeypatch):
         """Metadata endpoint handles URLs with leading/trailing whitespace."""
-        mock_meta = {"title": "Test", "description": "", "thumbnail": "", "webpage_url": ""}
+        mock_meta = {
+            "title": "Test",
+            "description": "",
+            "thumbnail": "",
+            "webpage_url": "",
+        }
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata", lambda url: mock_meta
         )
@@ -127,7 +133,9 @@ class TestMetadataInDownloadState:
         download_id = None
         for line in lines:
             if "download_started" in line:
-                data = [event_line for event_line in lines if event_line.startswith("data:")][0]
+                data = [
+                    event_line for event_line in lines if event_line.startswith("data:")
+                ][0]
                 download_id = json.loads(data[5:]).get("download_id")
                 break
 

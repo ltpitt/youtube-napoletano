@@ -33,7 +33,9 @@ class TestErrorMessages:
             def __init__(self, command, **kwargs):
                 self.command = command
                 self.stdout = iter([])
-                self.stderr = iter(["ERROR: [youtube] dQw4w9WgXcQ: Unable to download page"])
+                self.stderr = iter(
+                    ["ERROR: [youtube] dQw4w9WgXcQ: Unable to download page"]
+                )
                 self.returncode = 1
 
             def wait(self):
@@ -54,7 +56,9 @@ class TestErrorMessages:
 
     def test_invalid_url_returns_error(self, client):
         """Invalid URL returns proper error message."""
-        resp = client.get("/download_stream?url=invalid-url&audio_only=false&subtitles=false")
+        resp = client.get(
+            "/download_stream?url=invalid-url&audio_only=false&subtitles=false"
+        )
         assert resp.status_code == 200
         # SSE stream should contain error_event
         assert b"error_event" in resp.data
@@ -62,6 +66,7 @@ class TestErrorMessages:
 
     def test_metadata_endpoint_error_handling(self, client, monkeypatch):
         """Metadata endpoint returns error on fetch failure."""
+
         def raise_timeout(url):
             raise Exception("Timeout")
 
@@ -78,7 +83,9 @@ class TestErrorMessages:
 
     def test_update_endpoint_error_response(self, client, monkeypatch):
         """Update endpoint returns error with details on failure."""
-        monkeypatch.setattr("youtube_napoletano.app.should_update_ytdlp", lambda x: True)
+        monkeypatch.setattr(
+            "youtube_napoletano.app.should_update_ytdlp", lambda x: True
+        )
 
         def raise_update_error():
             raise RuntimeError("Update failed")
@@ -95,7 +102,9 @@ class TestErrorMessages:
 
     def test_error_message_format(self, client):
         """Error message format matches expected structure."""
-        resp = client.get("/download_stream?url=not-a-url&audio_only=false&subtitles=false")
+        resp = client.get(
+            "/download_stream?url=not-a-url&audio_only=false&subtitles=false"
+        )
         assert resp.status_code == 200
         data = resp.data.decode()
 
