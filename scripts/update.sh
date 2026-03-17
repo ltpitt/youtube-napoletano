@@ -90,6 +90,7 @@ EXCLUDE_PATTERNS=(
     "downloads"
     "youtube_napoletano/config.py"
     "yt-dlp-last-update.txt"
+    "@eaDir"
 )
 
 # Create exclude pattern for rsync
@@ -100,7 +101,7 @@ done
 
 # Copy files
 echo "📋 Aggiornando i file..."
-eval "rsync -av $EXCLUDE_ARGS --delete '$EXTRACTED_DIR/' '.'"
+eval "rsync -av --force $EXCLUDE_ARGS --delete '$EXTRACTED_DIR/' '.'"
 
 echo ""
 echo "✅ Aggiornamento completato con successo!"
