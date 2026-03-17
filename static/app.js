@@ -278,6 +278,28 @@ document.getElementById('updateLink').onclick = function(e) {
         applyTheme(this.checked ? 'light' : 'dark');
     });
 })();
+
+/* ── Download preferences (audio_only, subtitles) ────────────────── */
+(function() {
+    var audioCheckbox = document.querySelector('input[name="audio_only"]');
+    var subtitlesCheckbox = document.querySelector('input[name="subtitles"]');
+    
+    // Load saved preferences on page load
+    var savedAudioOnly = localStorage.getItem('audio_only') === 'true';
+    var savedSubtitles = localStorage.getItem('subtitles') !== 'false'; // default to true
+    
+    audioCheckbox.checked = savedAudioOnly;
+    subtitlesCheckbox.checked = savedSubtitles;
+    
+    // Save preferences on change
+    audioCheckbox.addEventListener('change', function() {
+        localStorage.setItem('audio_only', this.checked);
+    });
+    
+    subtitlesCheckbox.addEventListener('change', function() {
+        localStorage.setItem('subtitles', this.checked);
+    });
+})();
 /* ── Metadata fetch on paste / type ─────────────────────────────────── */
 (function() {
     var input = document.getElementById('urlInput');
