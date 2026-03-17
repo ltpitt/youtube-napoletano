@@ -502,7 +502,7 @@ def update() -> Any:
             app.logger.error(f"App update failed: {error_msg}")
             output_lines.append(f"✗ Errore app update: {error_msg}")
             return jsonify(
-                {"message": "Aggiornamento completato con errori",
+                {"message": "L'aggiurnamento s'è arricettato",
                  "details": "\n".join(output_lines)}
             ), 500
         
@@ -522,8 +522,8 @@ def update() -> Any:
     except subprocess.TimeoutExpired:
         app.logger.error("Update timed out after 5 minutes")
         return jsonify(
-            {"error": "Aggiornamento: timeout dopo 5 minuti",
-             "details": "L'operazione ha tardato troppo"}
+            {"error": "Aggiurnamento: tardà troppo",
+             "details": "Ll'operazione tenne troppo tiempo"}
         ), 500
     except Exception as e:
         app.logger.error(f"Update failed: {str(e)}")
