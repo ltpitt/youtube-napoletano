@@ -232,12 +232,12 @@ window.addEventListener('DOMContentLoaded', function() {
         .catch(function() { topbarDone(); });
 });
 
-/* ── Update yt-dlp ───────────────────────────────────────────────────── */
+/* ── Update yt-dlp and app ──────────────────────────────────────────── */
 document.getElementById('updateLink').onclick = function(e) {
     e.preventDefault();
     document.getElementById('messageBox').innerHTML = '';
     topbarStart();
-    showProgressIndeterminate('<span class="progress-icon">⚙️</span><span>Sto aggiurnanno yt-dlp...</span>');
+    showProgressIndeterminate('<span class="progress-icon">🔄</span><span>Sto aggiurnanno...</span>');
 
     fetch('/update', { method: 'POST' })
         .then(function(r) { return r.json(); })

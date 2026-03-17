@@ -469,14 +469,68 @@ def download_video() -> Any:
 
 @app.route("/update", methods=["POST"])
 def update() -> Any:
-    if not should_update_ytdlp(UPDATE_TIMESTAMP_FILE):
-        return jsonify({"message": "yt-dlp è già aggiurnato!"})
+    """Update both yt-dlp and the app from GitHub."""
     try:
-        update_ytdlp()
-        return jsonify({"message": "yt-dlp è stato aggiurnato cu successo!"})
+        output_lines = []
+        
+        # Step 1: Update yt-dlp if needed
+        if should_update_ytdlp(UPDATE_TIMESTAMP_FILE):
+            app.logger.info("Updating yt-dlp...")
+            output_lines.append("🔧 Aggiornando yt-dlp...")
+            try:
+                update_ytdlp()
+                output_lines.append("✓ yt-dlp aggiornato")
+            except Exception as e:
+                output_lines.append(f"✗ Errore yt-dlp: {str(e)}")
+        else:
+            output_lines.append("✓ yt-dlp già aggiornato")
+        
+        # Step 2: Update app from GitHub using update.sh
+        app.logger.info("Updating app from GitHub...")
+        output_lines.append("🔄 Aggiornando l'app da GitHub...")
+        
+        result = subprocess.run(
+            ["bash", "scripts/update.sh"],
+            cwd=Path(__file__).parent.parent,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        
+        if result.returncode != 0:
+            error_msg = result.stderr or "Script exit code: " + str(result.returncode)
+            app.logger.error(f"App update failed: {error_msg}")
+            output_lines.append(f"✗ Errore app update: {error_msg}")
+            return jsonify(
+                {"message": "Aggiornamento completato con errori",
+                 "details": "\n".join(output_lines)}
+            ), 500
+        
+        output_lines.append("✓ App aggiornata")
+        app.logger.info("App update successful")
+        
+        output = result.stdout
+        full_output = "\n".join(output_lines)
+        if output:
+            full_output += "\n\n" + output
+        
+        return jsonify(
+            {"message": "✅ Aggiornamento completato cu successo!",
+             "details": full_output}
+        )
+        
+    except subprocess.TimeoutExpired:
+        app.logger.error("Update timed out after 5 minutes")
+        return jsonify(
+            {"error": "Aggiornamento: timeout dopo 5 minuti",
+             "details": "L'operazione ha tardato troppo"}
+        ), 500
     except Exception as e:
-        app.logger.error(f"yt-dlp update failed: {str(e)}")
-        return jsonify({"error": "Nu pproblemma 'e curiso int'all'aggiurnamiento"}), 500
+        app.logger.error(f"Update failed: {str(e)}")
+        return jsonify(
+            {"error": "Nu pproblemma 'e curiso int'all'aggiurnamiento",
+             "details": str(e)}
+        ), 500
 
 
 if __name__ == "__main__":
