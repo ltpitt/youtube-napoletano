@@ -280,7 +280,7 @@ def download_status(download_id: str) -> Any:
 def metadata() -> Any:
     """Quick metadata lookup for a video URL.
 
-    Returns JSON: {title, description, thumbnail, webpage_url} or an error.
+    Returns JSON: {title, thumbnail} or an error.
     """
     video_url = (request.args.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):

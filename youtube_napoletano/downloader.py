@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from flask import current_app
+import re
 
 from youtube_napoletano.config import PYTHON_PATH, UPDATE_TIMESTAMP_FILE, YTDLP_PATH
 
@@ -20,8 +21,6 @@ def run_yt_dlp_command(
 
 
 def parse_progress(line: str) -> Optional[Dict[str, str]]:
-    import re
-
     match = re.search(
         r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)\s+at\s+(\d+\.?\d*\w+iB/s)\s+ETA\s+(\d+:\d+)",
         line,
@@ -59,33 +58,41 @@ def update_ytdlp() -> None:
         current_app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
 
 
-def fetch_metadata(url: str, timeout: int = 15) -> dict:
-    """Fetch basic video metadata using yt-dlp JSON output.
+def fetch_metadata(url: str, timeout: int = 90) -> dict:
+    """Fetch video title and thumbnail using curl and meta tags (fastest).
 
-    Returns a dict with keys: title, description, thumbnail, webpage_url.
+    Returns a dict with keys: title, thumbnail.
     Raises RuntimeError on failure.
     """
-    import json
-
-    command = [PYTHON_PATH, YTDLP_PATH, "-j", "--no-check-certificate", url]
+    command = ["curl", "-s", "-L", url]
     try:
         proc = run_yt_dlp_command(
             command, capture_output=True, check=True, timeout=timeout
         )
-        out = proc.stdout.strip()
-        if not out:
-            raise RuntimeError("No metadata returned")
-        first = out.splitlines()[0]
-        data = json.loads(first)
+        html = proc.stdout
+        # Extract og:title
+        title_match = re.search(r'<meta property="og:title" content="([^"]*)"', html)
+        if not title_match:
+            title_match = re.search(r"<title>([^<]*)</title>", html)
+        if not title_match:
+            raise RuntimeError("No title found in page")
+        title = title_match.group(1)
+
+        # Extract og:image (thumbnail)
+        thumbnail = None
+        thumbnail_match = re.search(
+            r'<meta property="og:image" content="([^"]*)"', html
+        )
+        if thumbnail_match:
+            thumbnail = thumbnail_match.group(1)
+
         return {
-            "title": data.get("title"),
-            "description": data.get("description"),
-            "thumbnail": data.get("thumbnail"),
-            "webpage_url": data.get("webpage_url") or url,
+            "title": title,
+            "thumbnail": thumbnail,
         }
     except subprocess.CalledProcessError as e:
-        current_app.logger.debug(f"yt-dlp metadata fetch failed: {e}")
-        raise RuntimeError("yt-dlp failed to fetch metadata")
+        current_app.logger.debug(f"curl fetch failed: {e}")
+        raise RuntimeError("Failed to fetch page")
     except Exception as e:
-        current_app.logger.debug(f"metadata parse error: {e}")
-        raise RuntimeError("Failed to parse metadata")
+        current_app.logger.debug(f"metadata fetch error: {e}")
+        raise RuntimeError("Failed to fetch metadata")

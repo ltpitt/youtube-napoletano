@@ -80,15 +80,29 @@ function copyToClipboard(btn) {
     });
 }
 
+/* ── Extract YouTube video ID from URL ────────────────────────────────── */
+function extractYouTubeId(url) {
+    var match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    return match ? match[1] : null;
+}
+
 /* ── Metadata card ───────────────────────────────────────────────────── */
-function renderMetadata(meta) {
+function renderMetadata(meta, originalUrl) {
     var card = document.getElementById('metaCard');
     topbarDone();
-    if (!meta) { card.style.display = 'none'; return; }
-    document.getElementById('metaThumb').src = meta.thumbnail || '';
-    document.getElementById('metaTitle').textContent = meta.title || meta.webpage_url || '';
-    document.getElementById('metaDesc').textContent = meta.description || '';
-    card.style.display = 'flex';
+    if (!meta || !originalUrl) { card.style.display = 'none'; return; }
+    
+    // Extract YouTube video ID and embed
+    var videoId = extractYouTubeId(originalUrl);
+    var videoFrame = document.getElementById('videoFrame');
+    
+    if (videoId) {
+        videoFrame.src = 'https://www.youtube.com/embed/' + videoId + '?rel=0';
+        card.style.display = 'flex';
+    } else {
+        card.style.display = 'none';
+        showMessage('Nun riesco a truvà \'o video. Verifica che \'o link sia corretta!', 'error');
+    }
 }
 
 /* ── Progress container helpers ──────────────────────────────────────── */
@@ -121,6 +135,13 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
     var messageBox   = document.getElementById('messageBox');
     var progressBar  = document.getElementById('progressBar');
     var progressInfo = document.getElementById('progressInfo');
+    
+    // Extract video URL from query string if present
+    var videoUrl = null;
+    var urlMatch = eventSourceUrl.match(/[?&]url=([^&]+)/);
+    if (urlMatch) {
+        videoUrl = decodeURIComponent(urlMatch[1]);
+    }
 
     messageBox.innerHTML = '';
     topbarStart();
@@ -136,7 +157,7 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
 
     eventSource.addEventListener('status', function(e) {
         var data = JSON.parse(e.data);
-        if (data.metadata) { renderMetadata(data.metadata); }
+        if (data.metadata) { renderMetadata(data.metadata, videoUrl || data.url); }
         if (data.message)  { progressInfo.textContent = data.message; }
     });
 
@@ -201,7 +222,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 clearDownloadId();
                 showMessage(data.error || "'O scarricamento s'è arricettato", 'error');
             } else {
-                if (data.metadata) { renderMetadata(data.metadata); }
+                if (data.metadata) { renderMetadata(data.metadata, data.url); }
                 connectToDownloadStream(
                     '/download_stream?download_id=' + id,
                     "Recuperanno 'o scarricamento 'e prima..."
@@ -233,7 +254,30 @@ document.getElementById('updateLink').onclick = function(e) {
             showMessage('Errore \'e rete', 'error', details);
         });
 };
-
+/* ── Theme toggle ──────────────────────────────────────────────────── */
+(function() {
+    var themeCheckbox = document.getElementById('themeCheckbox');
+    var savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light-mode');
+            themeCheckbox.checked = true;
+        } else {
+            document.body.classList.remove('light-mode');
+            themeCheckbox.checked = false;
+        }
+        localStorage.setItem('theme', theme);
+    }
+    
+    // Apply saved theme on load
+    applyTheme(savedTheme);
+    
+    // Toggle theme on checkbox change
+    themeCheckbox.addEventListener('change', function() {
+        applyTheme(this.checked ? 'light' : 'dark');
+    });
+})();
 /* ── Metadata fetch on paste / type ─────────────────────────────────── */
 (function() {
     var input = document.getElementById('urlInput');
@@ -246,9 +290,17 @@ document.getElementById('updateLink').onclick = function(e) {
         fetch('/metadata?url=' + encodeURIComponent(val))
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                renderMetadata((data && data.metadata) ? data.metadata : null);
+                if (data.error) {
+                    renderMetadata(null);
+                    showMessage(data.error, 'error');
+                } else {
+                    renderMetadata((data && data.metadata) ? data.metadata : null, val);
+                }
             })
-            .catch(function() { renderMetadata(null); });
+            .catch(function(err) { 
+                renderMetadata(null); 
+                showMessage('Errore \'e rete o URL nun valida', 'error');
+            });
     }
 
     input.addEventListener('paste', function() {

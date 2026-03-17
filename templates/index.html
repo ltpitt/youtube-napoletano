@@ -13,10 +13,8 @@
         <form id="downloadForm">
             <input id="urlInput" type="text" name="url" placeholder="Miette ccà 'o link d''o video 'e YouTube" required>
             <div id="metaCard" class="meta-card" style="display:none">
-                <img id="metaThumb" class="meta-thumb" src="" alt="thumbnail">
-                <div class="meta-body">
-                    <div id="metaTitle" class="meta-title"></div>
-                    <div id="metaDesc" class="meta-desc"></div>
+                <div id="videoPlayer" class="video-player">
+                    <iframe id="videoFrame" class="video-frame" src="" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
                 </div>
             </div>
             <div class="toggle-group">
@@ -29,7 +27,7 @@
             <div class="toggle-group">
                 <label class="toggle-label">
                     <span class="toggle-text">Scarrica 'e sottotitole</span>
-                    <input type="checkbox" name="subtitles" class="toggle-input">
+                    <input type="checkbox" name="subtitles" class="toggle-input" checked>
                     <span class="toggle-switch"></span>
                 </label>
             </div>
@@ -45,6 +43,10 @@
         <div id="messageBox"></div>
         <div class="footer">
             <a href="#" id="updateLink">⚙️ Aggiorna yt-dlp</a>
+            <label id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
+                <input type="checkbox" id="themeCheckbox" class="theme-checkbox">
+                <span class="theme-slider"></span>
+            </label>
         </div>
     </div>
     <script src="/static/app.js"></script>

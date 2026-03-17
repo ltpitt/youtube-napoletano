@@ -31,9 +31,6 @@ class TestMetadataEndpoint:
         # Mock fetch_metadata to return test data
         mock_meta = {
             "title": "Test Video",
-            "description": "Test description",
-            "thumbnail": "https://example.com/thumb.jpg",
-            "webpage_url": "https://www.youtube.com/watch?v=test123",
         }
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata", lambda url: mock_meta
@@ -44,8 +41,8 @@ class TestMetadataEndpoint:
         data = json.loads(resp.data)
         assert "metadata" in data
         assert data["metadata"]["title"] == "Test Video"
-        assert data["metadata"]["description"] == "Test description"
-        assert data["metadata"]["thumbnail"] == "https://example.com/thumb.jpg"
+        # Verify response structure for frontend
+        assert isinstance(data["metadata"], dict)
 
     def test_metadata_invalid_url(self, client):
         """Metadata endpoint rejects invalid YouTube URLs."""
@@ -63,7 +60,7 @@ class TestMetadataEndpoint:
         assert "error" in data
 
     def test_metadata_fetch_error(self, client, monkeypatch):
-        """Metadata endpoint handles fetch errors gracefully."""
+        """Metadata endpoint handles fetch errors gracefully and returns error message."""
 
         def raise_error(url):
             raise RuntimeError("Network error")
@@ -77,15 +74,14 @@ class TestMetadataEndpoint:
         assert resp.status_code == 500
         data = json.loads(resp.data)
         assert "error" in data
+        # Verify error message is displayed (it should say we couldn't fetch metadata)
+        assert (
+            "metadata" in data["error"].lower() or "scarrica" in data["error"].lower()
+        )
 
     def test_metadata_whitespace_handling(self, client, monkeypatch):
         """Metadata endpoint handles URLs with leading/trailing whitespace."""
-        mock_meta = {
-            "title": "Test",
-            "description": "",
-            "thumbnail": "",
-            "webpage_url": "",
-        }
+        mock_meta = {"title": "Test"}
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata", lambda url: mock_meta
         )
@@ -93,6 +89,26 @@ class TestMetadataEndpoint:
         # URL with whitespace should be stripped and work
         resp = client.get("/metadata?url=%20https://www.youtube.com/watch?v=test123%20")
         assert resp.status_code == 200
+
+    def test_metadata_curl_failure(self, client, monkeypatch):
+        """Metadata endpoint handles curl/network failures gracefully."""
+
+        def raise_error(url):
+            raise RuntimeError("Failed to fetch page")
+
+        monkeypatch.setattr(
+            "youtube_napoletano.app.fetch_metadata",
+            raise_error,
+        )
+
+        resp = client.get("/metadata?url=https://www.youtube.com/watch?v=test123")
+        assert resp.status_code == 500
+        data = json.loads(resp.data)
+        assert "error" in data
+        # Verify user-friendly error message is returned
+        assert (
+            "scarrica" in data["error"].lower() or "metadata" in data["error"].lower()
+        )
 
 
 class TestMetadataInDownloadState:
@@ -114,9 +130,6 @@ class TestMetadataInDownloadState:
         monkeypatch.setattr("youtube_napoletano.app.subprocess.Popen", FakePopen)
         mock_meta = {
             "title": "Rickroll",
-            "description": "Never gonna give you up",
-            "thumbnail": "https://example.com/thumb.jpg",
-            "webpage_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         }
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata", lambda url: mock_meta
@@ -167,9 +180,6 @@ class TestMetadataDownloadIntegration:
         monkeypatch.setattr("youtube_napoletano.app.subprocess.Popen", FakePopen)
         mock_meta = {
             "title": "Test",
-            "description": "Test desc",
-            "thumbnail": "https://example.com/thumb.jpg",
-            "webpage_url": "https://www.youtube.com/watch?v=test",
         }
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata", lambda url: mock_meta
