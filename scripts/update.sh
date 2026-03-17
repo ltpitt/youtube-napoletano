@@ -40,14 +40,30 @@ if ! curl -L -o "$ZIP_FILE" "https://github.com/$REPO/archive/refs/heads/$BRANCH
     exit 1
 fi
 
-# Extract ZIP
+# Extract ZIP using Python (built-in, no unzip needed)
 echo "📦 Estraendo i file..."
-if ! command -v unzip &> /dev/null; then
-    echo "❌ Errore: unzip non trovato. Installa unzip per procedere."
+if ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
+    echo "❌ Errore: python non trovato. Assicurati che Python sia installato."
     exit 1
 fi
 
-unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
+# Use python to extract ZIP
+PYTHON_CMD="python3"
+if ! command -v python3 &> /dev/null; then
+    PYTHON_CMD="python"
+fi
+
+$PYTHON_CMD << PYEOF
+import zipfile
+import sys
+try:
+    with zipfile.ZipFile('$ZIP_FILE', 'r') as zip_ref:
+        zip_ref.extractall('$TEMP_DIR')
+    print("✓ File estratti con successo")
+except Exception as e:
+    print(f"✗ Errore nell'estrazione: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
 
 # Find the extracted directory (usually youtube-napoletano-main)
 EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "*youtube-napoletano*" | head -1)
