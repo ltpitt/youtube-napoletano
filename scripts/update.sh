@@ -101,7 +101,7 @@ done
 
 # Copy files
 echo "📋 Aggiornando i file..."
-eval "rsync -av $EXCLUDE_ARGS '$EXTRACTED_DIR/' '.'"
+eval "rsync -av --inplace $EXCLUDE_ARGS '$EXTRACTED_DIR/' '.'"
 
 echo ""
 echo "✅ Aggiornamento completato con successo!"
