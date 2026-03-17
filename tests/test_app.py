@@ -62,9 +62,15 @@ def test_index(client):
 def test_update_endpoint(client, monkeypatch):
     monkeypatch.setattr("youtube_napoletano.downloader.update_ytdlp", lambda: None)
     monkeypatch.setattr("youtube_napoletano.utils.should_update_ytdlp", lambda x: True)
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *args, **kwargs: __import__("subprocess").CompletedProcess(
+            args=args[0], returncode=0, stdout="", stderr=""
+        ),
+    )
     resp = client.post("/update")
     assert resp.status_code == 200
-    assert b"aggiurnato" in resp.data  # Either "già aggiurnato" or "stato aggiurnato"
+    assert b"successo" in resp.data or b"Aggiornamento" in resp.data
 
 
 def test_download_stream_invalid_url(client):

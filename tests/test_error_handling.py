@@ -95,6 +95,9 @@ class TestErrorMessages:
             raise_update_error,
         )
 
+        # Mock subprocess to avoid actual script execution
+        monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: None)
+
         resp = client.post("/update")
         assert resp.status_code == 500
         data = json.loads(resp.data)
