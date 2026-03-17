@@ -5,6 +5,13 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# The root directory is the parent of scripts/
+PROJECT_ROOT="$( dirname "$SCRIPT_DIR" )"
+# Change to project root
+cd "$PROJECT_ROOT" || exit 1
+
 REPO="ltpitt/youtube-napoletano"
 BRANCH="main"
 TEMP_DIR=".update_temp"
