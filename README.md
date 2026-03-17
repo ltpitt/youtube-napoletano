@@ -24,7 +24,7 @@ _When the bed is tight, sleep in the middle. In other words: when life (or YouTu
 
 - Download YouTube videos or extract audio (MP3)
 - Progress bar and status updates via web UI
-- One-click yt-dlp updater
+- One-click updater
 - No ads, no nonsense
 
 ---
