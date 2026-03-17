@@ -1,6 +1,6 @@
 # You can override the venv name: make VENV=myenv install
 
-.PHONY: help run install lint format test test-all clean ruff-check
+.PHONY: help run install lint format test test-all clean ruff-check update
 
 VENV ?= .venv
 .DEFAULT_GOAL := help
@@ -13,6 +13,7 @@ help:
 	@echo "  make test-all  - Run all tests including integration tests"
 	@echo "  make lint      - Lint code with ruff (requires venv and ruff)"
 	@echo "  make format    - Format code with ruff (requires venv and ruff)"
+	@echo "  make update    - Update app from GitHub main branch (no git required)"
 	@echo "  make clean     - Remove venv and __pycache__ folders"
 	@echo "  make help      - Show this help"
 	@echo ""
@@ -49,6 +50,9 @@ lint: ruff-check
 
 format: ruff-check
 	$(VENV)/bin/ruff format .
+
+update:
+	bash scripts/update.sh
 
 ruff-check:
 	@if [ ! -x "$(VENV)/bin/ruff" ]; then \

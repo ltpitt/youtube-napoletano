@@ -51,12 +51,12 @@ button:active{transform:translateY(1px)}
 .video-player{width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,130,202,0.2)}
 .video-frame{width:100%;height:100%;border:none}
 .progress-container{display:none;margin-top:16px;padding:16px;border-radius:10px;background:linear-gradient(135deg, rgba(0,130,202,0.12), rgba(0,82,166,0.08));border:1px solid rgba(0,130,202,0.2);animation:fadeIn 0.3s ease-in}
-.progress-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:500;color:#fff}
+.progress-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:500;color:var(--text-color)}
 .progress-icon{font-size:1.2rem}
 .progress-bar-bg{width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
 .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));width:0%;transition:width 0.3s ease;border-radius:4px}
 .progress-info{font-size:0.8rem;color:var(--muted);margin-top:10px;text-align:center}
-.message{margin-top:16px;padding:16px;border-radius:10px;display:flex;gap:12px;align-items:flex-start;animation:fadeIn 0.3s ease-in;cursor:pointer}
+.message{margin-top:16px;padding:16px;border-radius:10px;display:flex;gap:12px;align-items:flex-start;animation:fadeIn 0.3s ease-in;cursor:pointer;color:var(--text-color)}
 .message-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px}
 .message-main{flex:1;min-width:0}
 .message-title{font-weight:600;line-height:1.5;margin-bottom:4px;word-break:break-word}
@@ -67,6 +67,7 @@ button:active{transform:translateY(1px)}
 .message.expanded{padding-bottom:16px}
 .message.expanded .message-details{max-height:600px;margin-top:12px;padding-top:12px;border-top:1px solid currentColor;opacity:0.95}
 .message-trace{margin:0;font-size:0.7rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:300px;padding:12px;background:rgba(0,0,0,0.3);border-radius:6px;border:1px solid rgba(255,255,255,0.1);font-family:monospace;letter-spacing:-0.5px}
+body.light-mode .message-trace{background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1)}
 .message-copy{margin-top:12px;padding:8px 14px;font-size:0.8rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:4px;color:inherit;cursor:pointer;transition:all 0.2s}
 .message-copy:hover{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.4)}
 .success{background:linear-gradient(135deg, rgba(20,99,42,0.2), rgba(20,99,42,0.1));border:1px solid rgba(76,184,96,0.3);color:#5dd98e}
