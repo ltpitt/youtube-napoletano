@@ -13,18 +13,38 @@ Scarica video e audio da YouTube, senza pubblicità, direttamente dal browser.
 
 ## Installazione
 
+**macOS / Linux**
+
 ```sh
 git clone https://github.com/ltpitt/youtube-napoletano.git
 cd youtube-napoletano
 make install
 ```
 
+**Windows** (PowerShell o Prompt dei comandi)
+
+```bat
+git clone https://github.com/ltpitt/youtube-napoletano.git
+cd youtube-napoletano
+python -m venv .venv
+.venv\Scripts\pip install --upgrade pip
+.venv\Scripts\pip install -r requirements.txt
+```
+
 ---
 
 ## Avvio
 
+**macOS / Linux**
+
 ```sh
 make run
+```
+
+**Windows** (PowerShell o Prompt dei comandi)
+
+```bat
+.venv\Scripts\python youtube_napoletano.py
 ```
 
 Apri il browser su [http://localhost:8443](http://localhost:8443).
