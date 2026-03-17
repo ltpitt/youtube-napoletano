@@ -48,7 +48,11 @@ def parse_progress(line: str) -> Optional[Dict[str, str]]:
 
 def update_ytdlp() -> None:
     try:
-        run_yt_dlp_command([PYTHON_PATH, YTDLP_PATH, "--no-check-certificate", "-U"], timeout=30, check=False)
+        run_yt_dlp_command(
+            [PYTHON_PATH, YTDLP_PATH, "--no-check-certificate", "-U"],
+            timeout=30,
+            check=False,
+        )
         Path(UPDATE_TIMESTAMP_FILE).write_text(datetime.now().isoformat())
         current_app.logger.info("yt-dlp updated successfully")
     except Exception as e:
@@ -65,7 +69,9 @@ def fetch_metadata(url: str, timeout: int = 15) -> dict:
 
     command = [PYTHON_PATH, YTDLP_PATH, "-j", "--no-check-certificate", url]
     try:
-        proc = run_yt_dlp_command(command, capture_output=True, check=True, timeout=timeout)
+        proc = run_yt_dlp_command(
+            command, capture_output=True, check=True, timeout=timeout
+        )
         out = proc.stdout.strip()
         if not out:
             raise RuntimeError("No metadata returned")
