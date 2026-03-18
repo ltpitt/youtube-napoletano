@@ -214,13 +214,16 @@ body.light-mode .settings-btn:hover{
   right:0;
   width:320px;
   height:100vh;
-  background:var(--card);
+  background:rgba(0,0,0,0.85);
   color:var(--text-color);
   overflow-y:auto;
   box-shadow:-2px 0 10px rgba(0,0,0,0.3);
   transform:translateX(100%);
   transition:transform 0.3s ease;
   z-index:1000;
+}
+body.light-mode .settings-drawer{
+  background:rgba(255,255,255,0.95);
 }
 .settings-drawer.open{
   transform:translateX(0);
