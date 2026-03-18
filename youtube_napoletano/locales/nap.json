@@ -49,7 +49,8 @@
     "cleaning_up": "Sto pulizianno...",
     "finalizing": "Scarricamento cumpletato, sto pulizianno...",
     "system_error": "'O scarricamento s'è arricettato p' nu errore 'e sistema",
-    "network_error": "Errore 'e rete"
+    "network_error": "Errore 'e rete",
+    "copy_failed": "Copia falluta — seleziona e copia a mano"
   },
   "progress": {
     "percent": "{percent}% • Velocità: {speed} • Dimensione: {size}"
