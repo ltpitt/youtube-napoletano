@@ -1,5 +1,37 @@
 var DOWNLOAD_ID_KEY = 'yt_napoletano_download_id';
 
+/* ── i18n translations ───────────────────────────────────────────────── */
+function applyI18nTranslations(strings) {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var parts = el.getAttribute('data-i18n').split('.');
+        var val = strings;
+        for (var i = 0; i < parts.length; i++) { val = val && val[parts[i]]; }
+        if (val) el.textContent = val;
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        var parts = el.getAttribute('data-i18n-placeholder').split('.');
+        var val = strings;
+        for (var i = 0; i < parts.length; i++) { val = val && val[parts[i]]; }
+        if (val) el.placeholder = val;
+    });
+}
+
+function loadAndApplyTranslations() {
+    fetch('/api/i18n/strings')
+        .then(function(r) { return r.json(); })
+        .then(applyI18nTranslations)
+        .catch(function(err) { console.error('i18n load failed:', err); });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var savedLang = localStorage.getItem('language') || 'nap';
+    fetch('/api/i18n/set-language', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: savedLang })
+    }).then(loadAndApplyTranslations);
+});
+
 function storeDownloadId(id) { localStorage.setItem(DOWNLOAD_ID_KEY, id); }
 function clearDownloadId()   { localStorage.removeItem(DOWNLOAD_ID_KEY); }
 function getStoredDownloadId() { return localStorage.getItem(DOWNLOAD_ID_KEY); }
@@ -262,37 +294,27 @@ document.getElementById('updateLink').onclick = function(e) {
 };
 /* ── Theme toggle ──────────────────────────────────────────────────── */
 (function() {
-    var themeCheckbox = document.getElementById('themeCheckbox');
-    var themeCheckbox2 = document.getElementById('themeCheckbox2');
+    var themeToggleBtn = document.getElementById('themeToggleBtn');
     var savedTheme = localStorage.getItem('theme') || 'dark';
     
     function applyTheme(theme) {
         if (theme === 'light') {
             document.body.classList.add('light-mode');
-            if (themeCheckbox) themeCheckbox.checked = true;
-            if (themeCheckbox2) themeCheckbox2.checked = true;
         } else {
             document.body.classList.remove('light-mode');
-            if (themeCheckbox) themeCheckbox.checked = false;
-            if (themeCheckbox2) themeCheckbox2.checked = false;
         }
         localStorage.setItem('theme', theme);
     }
     
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', function() {
+            var current = localStorage.getItem('theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+    }
+    
     // Apply saved theme on load
     applyTheme(savedTheme);
-    
-    // Toggle theme on both checkboxes
-    if (themeCheckbox) {
-        themeCheckbox.addEventListener('change', function() {
-            applyTheme(this.checked ? 'light' : 'dark');
-        });
-    }
-    if (themeCheckbox2) {
-        themeCheckbox2.addEventListener('change', function() {
-            applyTheme(this.checked ? 'light' : 'dark');
-        });
-    }
 })();
 
 /* ── Settings Drawer ─────────────────────────────────────────────────── */
@@ -378,7 +400,7 @@ document.getElementById('updateLink').onclick = function(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language: newLang })
         })
-            .then(function(r) { return r.json(); })
+            .then(loadAndApplyTranslations)
             .catch(function(err) {
                 console.error('Failed to set language:', err);
             });

@@ -53,8 +53,8 @@ h1{font-size:1.4rem;margin:4px 0 12px}
   flex:1;
 }
 #downloadForm{display:flex;flex-direction:column;gap:10px}
-#urlInput{width:100%;padding:14px;border-radius:8px;border:none;font-size:1rem;box-sizing:border-box}
-button{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#fff;border:none;padding:12px;border-radius:10px;font-size:1rem}
+#urlInput{width:100%;padding:14px;border-radius:8px;border:none;font-size:1rem;box-sizing:border-box; margin-top:1em;}
+button{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#fff;border:none;padding:12px;border-radius:10px;font-size:1rem;margin-top: 1em;}
 button:active{transform:translateY(1px)}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .meta-card{display:flex;flex-direction:column;gap:12px;padding:0;background:transparent;border-radius:8px;margin-top:8px;animation:fadeIn 0.4s ease-in;border:none}
@@ -160,17 +160,76 @@ body.light-mode .error{background:linear-gradient(135deg, rgba(229,57,53,0.2), r
   .container{padding:24px}
   h1{font-size:1.6rem}
 }
-/* Settings Drawer */
-.settings-btn{
+/* Header Actions */
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.theme-btn{
   background:none;
-  border:1px solid rgba(255,255,255,0.3);
+  border:none;
   border-radius:8px;
   color:var(--text-color);
   width:40px;
   height:40px;
   padding:0;
   cursor:pointer;
-  font-size:1.1rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+  position:relative;
+}
+.theme-btn:hover{
+  background:rgba(0,130,202,0.1);
+}
+body.light-mode .theme-btn:hover{
+  background:rgba(0,130,202,0.08);
+}
+.theme-icon{
+  position:absolute;
+  transition:opacity 0.25s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  transform-origin:center center;
+}
+.theme-icon-light{
+  opacity:1;
+  transform:rotate(0deg) scale(1);
+}
+.theme-icon-dark{
+  opacity:0;
+  transform:rotate(-90deg) scale(0.7);
+}
+body.light-mode .theme-icon-light{
+  opacity:0;
+  transform:rotate(90deg) scale(0.7);
+}
+body.light-mode .theme-icon-dark{
+  opacity:1;
+  transform:rotate(0deg) scale(1);
+}
+.settings-icon{
+  display:inline-block;
+  transform-origin:center center;
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.settings-btn:hover .settings-icon{
+  transform:rotate(90deg);
+}
+@keyframes spin-gentle{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(90deg)}
+}
+/* Settings Drawer */
+.settings-btn{
+  background:none;
+  border:none;
+  border-radius:8px;
+  color:var(--text-color);
+  width:40px;
+  height:40px;
+  padding:0;
+  cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -178,14 +237,9 @@ body.light-mode .error{background:linear-gradient(135deg, rgba(229,57,53,0.2), r
 }
 .settings-btn:hover{
   background:rgba(0,130,202,0.1);
-  border-color:var(--accent);
-}
-body.light-mode .settings-btn{
-  border-color:rgba(0,0,0,0.3);
 }
 body.light-mode .settings-btn:hover{
   background:rgba(0,130,202,0.08);
-  border-color:var(--accent);
 }
 /* Drawer Backdrop */
 .settings-backdrop{
@@ -286,14 +340,17 @@ body.light-mode .settings-btn:hover{
   color:var(--muted);
 }
 .language-selector{
+  width:100%;
   padding:10px 12px;
   border:1px solid rgba(255,255,255,0.3);
   border-radius:6px;
   background:rgba(255,255,255,0.05);
   color:var(--text-color);
-  font-size:1rem;
+  font-size:1rem !important;
+  line-height:1.5 !important;
   cursor:pointer;
   transition:all 0.2s ease;
+  box-sizing:border-box;
 }
 .language-selector:hover{
   border-color:var(--accent);
@@ -302,6 +359,8 @@ body.light-mode .settings-btn:hover{
 .language-selector option{
   background:#222;
   color:#fff;
+  font-size:1rem;
+  line-height:1.5;
 }
 body.light-mode .language-selector{
   background:rgba(0,0,0,0.05);
