@@ -276,8 +276,8 @@ body.light-mode .settings-btn:hover{
   transform:translateY(-1px);
 }
 .update-btn.updating{
-  animation:spin 1s linear infinite;
-  display:inline-block;
+  opacity:0.6;
+  cursor:not-allowed;
 }
 .settings-group label{
   font-size:0.9rem;
