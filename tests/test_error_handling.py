@@ -95,13 +95,18 @@ class TestErrorMessages:
             raise_update_error,
         )
 
-        # Mock subprocess to avoid actual script execution
-        monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: None)
+        # Mock subprocess to simulate a failed app update script
+        class MockResult:
+            returncode = 1
+            stderr = "App update script failed"
+            stdout = ""
+
+        monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: MockResult())
 
         resp = client.post("/update")
         assert resp.status_code == 500
         data = json.loads(resp.data)
-        assert "error" in data
+        assert "message" in data
 
     def test_error_message_format(self, client):
         """Error message format matches expected structure."""
