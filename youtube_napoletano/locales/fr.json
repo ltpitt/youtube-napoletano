@@ -29,7 +29,7 @@
     "app_extracting": "📦 Extraction des fichiers...",
     "app_updated": "✓ Application mise à jour",
     "app_error": "✗ Erreur de mise à jour de l'application : {error}",
-    "success": "✅ Mise à jour terminée avec succès !",
+    "success": "Mise à jour terminée avec succès !",
     "timeout": "Délai d'expiration de la mise à jour",
     "timeout_details": "L'opération a pris trop de temps",
     "error": "Une erreur s'est produite lors de la mise à jour"

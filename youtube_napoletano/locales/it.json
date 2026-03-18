@@ -29,7 +29,7 @@
     "app_extracting": "📦 Estrazione file...",
     "app_updated": "✓ App aggiornata",
     "app_error": "✗ Errore aggiornamento app: {error}",
-    "success": "✅ Aggiornamento completato con successo!",
+    "success": "Aggiornamento completato con successo!",
     "timeout": "Timeout aggiornamento",
     "timeout_details": "L'operazione ha richiesto troppo tempo",
     "error": "Si è verificato un errore durante l'aggiornamento"

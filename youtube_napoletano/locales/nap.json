@@ -29,7 +29,7 @@
     "app_extracting": "📦 Estraendo i file...",
     "app_updated": "✓ App aggiurnata",
     "app_error": "✗ Errore app update: {error}",
-    "success": "✅ Aggiurnamento completato cu successo!",
+    "success": "Aggiurnamento completato cu successo!",
     "timeout": "Aggiurnamento: tardà troppo",
     "timeout_details": "L'operazione tenne troppo tiempo",
     "error": "Nu pproblemma 'e curiso int'all'aggiurnamiento"

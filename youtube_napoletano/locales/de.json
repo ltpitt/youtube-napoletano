@@ -29,7 +29,7 @@
     "app_extracting": "📦 Dateien extrahieren...",
     "app_updated": "✓ App aktualisiert",
     "app_error": "✗ App-Aktualisierungsfehler: {error}",
-    "success": "✅ Aktualisierung erfolgreich abgeschlossen!",
+    "success": "Aktualisierung erfolgreich abgeschlossen!",
     "timeout": "Aktualisierungszeit überschritten",
     "timeout_details": "Der Vorgang hat zu lange gedauert",
     "error": "Bei der Aktualisierung ist ein Fehler aufgetreten"

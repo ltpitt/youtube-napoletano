@@ -29,7 +29,7 @@
     "app_extracting": "📦 Extracting files...",
     "app_updated": "✓ App updated",
     "app_error": "✗ App update error: {error}",
-    "success": "✅ Update completed successfully!",
+    "success": "Update completed successfully!",
     "timeout": "Update timed out",
     "timeout_details": "The operation took too long",
     "error": "An error occurred during update"

@@ -85,6 +85,16 @@ button:active{transform:translateY(1px)}
 body.light-mode .message-trace{background:rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85)}
 .message-copy{margin-top:12px;padding:8px 14px;font-size:0.8rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:4px;color:inherit;cursor:pointer;transition:all 0.2s}
 .message-copy:hover{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.4)}
+/* Improve visibility of copy button in light mode */
+body.light-mode .message-copy{
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.12);
+  color: inherit;
+}
+body.light-mode .message-copy:hover{
+  background: rgba(0,0,0,0.09);
+  border-color: rgba(0,0,0,0.18);
+}
 .success{background:linear-gradient(135deg, rgba(20,99,42,0.2), rgba(20,99,42,0.1));border:1px solid rgba(76,184,96,0.3);color:#5dd98e}
 body.light-mode .success{background:linear-gradient(135deg, rgba(76,184,96,0.25), rgba(76,184,96,0.15));border:1px solid rgba(56,142,60,0.5);color:#1b5e20}
 .error{background:linear-gradient(135deg, rgba(122,36,26,0.2), rgba(122,36,26,0.1));border:1px solid rgba(244,67,54,0.3);color:#ff7a6d}
@@ -271,7 +281,6 @@ body.light-mode .settings-drawer{
   font-size:0.85rem;
   font-weight:600;
   color:var(--muted);
-  text-transform:uppercase;
   letter-spacing:0.5px;
 }
 .update-btn{
