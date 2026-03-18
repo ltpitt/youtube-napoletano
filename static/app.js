@@ -116,12 +116,64 @@ function escapeHtml(text) {
 }
 
 function copyToClipboard(btn) {
-    var details = btn.parentElement.querySelector('pre').textContent;
-    navigator.clipboard.writeText(details).then(function() {
-        var orig = btn.textContent;
-        btn.textContent = (_str.messages && _str.messages.copied) || '✓ Copied';
-        setTimeout(function() { btn.textContent = orig; }, 2000);
-    });
+    var pre = btn.parentElement.querySelector('pre');
+    if (!pre) { return; }
+    var details = pre.textContent;
+
+    // Prefer modern Clipboard API when available (requires secure context on some mobile browsers)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(details).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = (_str.messages && _str.messages.copied) || '✓ Copied';
+            setTimeout(function() { btn.textContent = orig; }, 2000);
+        }).catch(function(err) {
+            // Fallback to execCommand approach if Clipboard API fails
+            fallbackCopyText(details, btn);
+        });
+        return;
+    }
+
+    // Older browsers (or restrictive mobile browsers): use fallback
+    fallbackCopyText(details, btn);
+}
+
+function fallbackCopyText(text, btn) {
+    try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        // Prevent mobile viewport from jumping
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.width = '1px';
+        ta.style.height = '1px';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        var successful = false;
+        try {
+            successful = document.execCommand('copy');
+        } catch (e) {
+            successful = false;
+        }
+        document.body.removeChild(ta);
+        if (successful) {
+            var orig = btn.textContent;
+            btn.textContent = (_str.messages && _str.messages.copied) || '✓ Copied';
+            setTimeout(function() { btn.textContent = orig; }, 2000);
+            return true;
+        }
+    } catch (e) {
+        // ignore
+    }
+    // If we reach here, copying failed — show a brief alert as fallback
+    try { alert((_str.messages && _str.messages.copy_failed) || 'Copy failed — select and copy manually'); } catch (e) {}
+    return false;
 }
 
 /* ── Extract YouTube video ID from URL ────────────────────────────────── */
