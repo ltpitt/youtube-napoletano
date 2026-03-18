@@ -13,6 +13,10 @@
     "not_found": "'O scarricamento nun s'è truvato",
     "metadata_error": "Nun songh' riuscuto a piglià 'e metadata"
   },
+  "settings": {
+    "language_label": "Lengua",
+    "update_section": "Applicativo"
+  },
   "update": {
     "button": "Aggiorna",
     "checking": "🔍 Ccheckanno ggià se ce sta na versione nuova...",

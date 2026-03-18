@@ -310,6 +310,15 @@ document.getElementById('updateLink').onclick = function(e) {
             updateLink.disabled = false;
             var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
             showMessage(data.message || 'Update completed', 'success', details);
+            // Close drawer after 2.5 seconds
+            setTimeout(function() {
+                var backdrop = document.getElementById('settingsBackdrop');
+                var drawer = document.getElementById('settingsDrawer');
+                if (backdrop && drawer) {
+                    backdrop.classList.remove('open');
+                    drawer.classList.remove('open');
+                }
+            }, 2500);
         })
         .catch(function(err) {
             topbarDone();

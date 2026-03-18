@@ -13,6 +13,10 @@
     "not_found": "Téléchargement introuvable",
     "metadata_error": "Impossible de récupérer les métadonnées"
   },
+  "settings": {
+    "language_label": "Langue",
+    "update_section": "Application"
+  },
   "update": {
     "button": "Mettre à jour",
     "checking": "🔍 Vérification des mises à jour...",

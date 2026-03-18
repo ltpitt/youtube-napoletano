@@ -13,6 +13,10 @@
     "not_found": "Download nicht gefunden",
     "metadata_error": "Metadaten konnten nicht abgerufen werden"
   },
+  "settings": {
+    "language_label": "Sprache",
+    "update_section": "Anwendung"
+  },
   "update": {
     "button": "Aktualisieren",
     "checking": "🔍 Suche nach Aktualisierungen...",

@@ -266,6 +266,14 @@ body.light-mode .settings-drawer{
   flex-direction:column;
   gap:10px;
 }
+.settings-group-title{
+  margin:0;
+  font-size:0.85rem;
+  font-weight:600;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
 .update-btn{
   width:100%;
   padding:12px;

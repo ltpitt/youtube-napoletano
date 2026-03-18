@@ -13,6 +13,10 @@
     "not_found": "Download non trovato",
     "metadata_error": "Impossibile recuperare i metadati"
   },
+  "settings": {
+    "language_label": "Lingua",
+    "update_section": "Applicazione"
+  },
   "update": {
     "button": "Aggiorna",
     "checking": "🔍 Controllo aggiornamenti...",
