@@ -49,7 +49,8 @@
     "cleaning_up": "Wird bereinigt...",
     "finalizing": "Download wird abgeschlossen, wird bereinigt...",
     "system_error": "Download aufgrund eines Systemfehlers fehlgeschlagen",
-    "network_error": "Netzwerkfehler"
+    "network_error": "Netzwerkfehler",
+    "copy_failed": "Kopieren fehlgeschlagen — manuell auswählen und kopieren"
   },
   "progress": {
     "percent": "{percent}% • Geschwindigkeit: {speed} • Größe: {size}"

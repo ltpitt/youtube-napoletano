@@ -49,7 +49,8 @@
     "cleaning_up": "Nettoyage...",
     "finalizing": "Finalisation du téléchargement, nettoyage...",
     "system_error": "Téléchargement échoué en raison d'une erreur système",
-    "network_error": "Erreur réseau"
+    "network_error": "Erreur réseau",
+    "copy_failed": "Échec de la copie — sélectionnez et copiez manuellement"
   },
   "progress": {
     "percent": "{percent}% • Vitesse : {speed} • Taille : {size}"

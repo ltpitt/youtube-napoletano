@@ -49,7 +49,8 @@
     "cleaning_up": "Cleaning up...",
     "finalizing": "Finalizing download, cleaning up...",
     "system_error": "Download failed due to a system error",
-    "network_error": "Network error"
+    "network_error": "Network error",
+    "copy_failed": "Copy failed — select and copy manually"
   },
   "progress": {
     "percent": "{percent}% • Speed: {speed} • Size: {size}"

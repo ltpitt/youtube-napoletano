@@ -210,3 +210,4 @@ __marimo__/
 config.py
 yt-dlp-last-update.txt
 .last_etag
+node_modules/
