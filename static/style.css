@@ -282,6 +282,8 @@ body.light-mode .settings-drawer{
   font-weight:600;
   color:var(--muted);
   letter-spacing:0.5px;
+  /* match the vertical spacing used by the language label/select pair */
+  margin-bottom:10px;
 }
 .update-btn{
   width:100%;
