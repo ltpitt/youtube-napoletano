@@ -43,6 +43,7 @@
     "details_hint": "Klicken Sie, um Details anzuzeigen",
     "close": "Schließen",
     "copied": "✓ Kopiert",
+    "copy_failed": "Kopieren fehlgeschlagen — bitte markieren und manuell kopieren",
     "merging": "Dateien werden zusammengeführt...",
     "converting": "Konvertierung läuft...",
     "downloading_file": "Wird heruntergeladen...",

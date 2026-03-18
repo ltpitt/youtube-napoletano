@@ -43,6 +43,7 @@
     "details_hint": "Haz clic para ver los detalles",
     "close": "Cerrar",
     "copied": "✓ Copiado",
+    "copy_failed": "Error al copiar — selecciona y copia manualmente",
     "merging": "Fusionando archivos...",
     "converting": "Convirtiendo...",
     "downloading_file": "Descargando...",
