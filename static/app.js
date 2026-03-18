@@ -237,7 +237,6 @@ document.getElementById('updateLink').onclick = function(e) {
     e.preventDefault();
     document.getElementById('messageBox').innerHTML = '';
     topbarStart();
-    showProgressIndeterminate('<span class="progress-icon">🔄</span><span>Sto aggiurnanno...</span>');
 
     fetch('/update', { method: 'POST' })
         .then(function(r) { return r.json(); })
