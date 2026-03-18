@@ -55,6 +55,10 @@ h1{font-size:1.4rem;margin:4px 0 12px}
 #downloadForm{display:flex;flex-direction:column;gap:10px}
 #urlInput{width:100%;padding:14px;border-radius:8px;border:none;font-size:1rem;box-sizing:border-box; margin-top:1em;}
 button{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#fff;border:none;padding:12px;border-radius:10px;font-size:1rem;margin-top: 1em;}
+button:hover{
+  opacity:0.9;
+  transform:translateY(-1px);
+}
 button:active{transform:translateY(1px)}
 .meta-card{display:flex;flex-direction:column;gap:12px;padding:0;background:transparent;border-radius:8px;margin-top:8px;animation:fadeIn 0.4s ease-in;border:none}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
