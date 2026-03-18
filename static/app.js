@@ -256,15 +256,18 @@ document.getElementById('updateLink').onclick = function(e) {
 /* ── Theme toggle ──────────────────────────────────────────────────── */
 (function() {
     var themeCheckbox = document.getElementById('themeCheckbox');
+    var themeCheckbox2 = document.getElementById('themeCheckbox2');
     var savedTheme = localStorage.getItem('theme') || 'dark';
     
     function applyTheme(theme) {
         if (theme === 'light') {
             document.body.classList.add('light-mode');
-            themeCheckbox.checked = true;
+            if (themeCheckbox) themeCheckbox.checked = true;
+            if (themeCheckbox2) themeCheckbox2.checked = true;
         } else {
             document.body.classList.remove('light-mode');
-            themeCheckbox.checked = false;
+            if (themeCheckbox) themeCheckbox.checked = false;
+            if (themeCheckbox2) themeCheckbox2.checked = false;
         }
         localStorage.setItem('theme', theme);
     }
@@ -272,9 +275,106 @@ document.getElementById('updateLink').onclick = function(e) {
     // Apply saved theme on load
     applyTheme(savedTheme);
     
-    // Toggle theme on checkbox change
-    themeCheckbox.addEventListener('change', function() {
-        applyTheme(this.checked ? 'light' : 'dark');
+    // Toggle theme on both checkboxes
+    if (themeCheckbox) {
+        themeCheckbox.addEventListener('change', function() {
+            applyTheme(this.checked ? 'light' : 'dark');
+        });
+    }
+    if (themeCheckbox2) {
+        themeCheckbox2.addEventListener('change', function() {
+            applyTheme(this.checked ? 'light' : 'dark');
+        });
+    }
+})();
+
+/* ── Settings Drawer ─────────────────────────────────────────────────── */
+(function() {
+    var settingsBtn = document.getElementById('settingsBtn');
+    var closeBtn = document.getElementById('closeSettingsBtn');
+    var backdrop = document.getElementById('settingsBackdrop');
+    var drawer = document.getElementById('settingsDrawer');
+    
+    function openDrawer() {
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+    }
+    
+    function closeDrawer() {
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+    }
+    
+    settingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        openDrawer();
+    });
+    
+    closeBtn.addEventListener('click', function() {
+        closeDrawer();
+    });
+    
+    backdrop.addEventListener('click', function() {
+        closeDrawer();
+    });
+    
+    // Prevent close when clicking inside drawer
+    drawer.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDrawer();
+        }
+    });
+})();
+
+/* ── Language selector ──────────────────────────────────────────────── */
+(function() {
+    var langSelector = document.getElementById('languageSelector');
+    if (!langSelector) { return; }
+    
+    // Load available languages
+    fetch('/api/i18n/languages')
+        .then(function(r) { return r.json(); })
+        .then(function(languages) {
+            // Clear current options
+            langSelector.innerHTML = '';
+            
+            // Add language options
+            for (var code in languages) {
+                if (languages.hasOwnProperty(code)) {
+                    var option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = languages[code];
+                    langSelector.appendChild(option);
+                }
+            }
+            
+            // Load saved language preference
+            var savedLang = localStorage.getItem('language') || 'nap';
+            langSelector.value = savedLang;
+        })
+        .catch(function(err) {
+            console.error('Failed to load languages:', err);
+        });
+    
+    // Handle language change
+    langSelector.addEventListener('change', function() {
+        var newLang = this.value;
+        localStorage.setItem('language', newLang);
+        
+        fetch('/api/i18n/set-language', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: newLang })
+        })
+            .then(function(r) { return r.json(); })
+            .catch(function(err) {
+                console.error('Failed to set language:', err);
+            });
     });
 })();
 
@@ -299,6 +399,7 @@ document.getElementById('updateLink').onclick = function(e) {
         localStorage.setItem('subtitles', this.checked);
     });
 })();
+
 /* ── Metadata fetch on paste / type ─────────────────────────────────── */
 (function() {
     var input = document.getElementById('urlInput');

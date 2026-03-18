@@ -43,12 +43,32 @@
         <div id="messageBox"></div>
         <div class="footer">
             <a href="#" id="updateLink">🔄 Aggiorna</a>
-            <label id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
-                <input type="checkbox" id="themeCheckbox" class="theme-checkbox">
-                <span class="theme-slider"></span>
-            </label>
+            <button id="settingsBtn" class="settings-btn" title="Apri impostazioni" aria-label="Impostazioni">⚙️</button>
         </div>
     </div>
+    
+    <!-- Settings Drawer -->
+    <div id="settingsBackdrop" class="settings-backdrop"></div>
+    <div id="settingsDrawer" class="settings-drawer">
+        <div class="settings-header">
+            <h2>Impostazioni</h2>
+            <button id="closeSettingsBtn" class="close-settings" aria-label="Chiudi impostazioni">✕</button>
+        </div>
+        <div class="settings-content">
+            <div class="settings-group">
+                <label for="languageSelector">Lingua / Language:</label>
+                <select id="languageSelector" class="language-selector"></select>
+            </div>
+            <div class="settings-group">
+                <label class="theme-label">Modalità scura / Dark mode</label>
+                <label class="theme-toggle settings-theme">
+                    <input type="checkbox" id="themeCheckbox2" class="theme-checkbox">
+                    <span class="theme-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
     <script src="/static/app.js"></script>
 </body>
 </html>
