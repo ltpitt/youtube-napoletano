@@ -496,6 +496,7 @@ def update() -> Any:
                 update_ytdlp()
                 output_lines.append(i18n.get("update.ytdlp_updated"))
             except Exception as e:
+                app.logger.warning(f"yt-dlp update failed: {str(e)}")
                 output_lines.append(
                     i18n.get("update.ytdlp_error").replace("{error}", str(e))
                 )
@@ -506,55 +507,57 @@ def update() -> Any:
         app.logger.info("Updating app from GitHub...")
         output_lines.append(i18n.get("update.updating_app"))
 
-        result = subprocess.run(
-            ["bash", "scripts/update.sh"],
-            cwd=Path(__file__).parent.parent,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-
-        if result.returncode != 0:
-            error_msg = result.stderr or "Script exit code: " + str(result.returncode)
-            app.logger.error(f"App update failed: {error_msg}")
-            output_lines.append(
-                i18n.get("update.app_error").replace("{error}", error_msg)
+        try:
+            result = subprocess.run(
+                ["bash", "scripts/update.sh"],
+                cwd=Path(__file__).parent.parent,
+                capture_output=True,
+                text=True,
+                timeout=300,
             )
+
+            if result.returncode != 0:
+                error_msg = result.stderr or "Script exit code: " + str(result.returncode)
+                app.logger.error(f"App update failed: {error_msg}")
+                output_lines.append(
+                    i18n.get("update.app_error").replace("{error}", error_msg)
+                )
+                return jsonify(
+                    {
+                        "message": i18n.get("update.error"),
+                        "details": "\n".join(output_lines),
+                    }
+                ), 500
+
+            output_lines.append(i18n.get("update.app_updated"))
+            app.logger.info("App update successful")
+
+            output = result.stdout
+            full_output = "\n".join(output_lines)
+            if output:
+                full_output += "\n\n" + output
+
+            return jsonify(
+                {
+                    "message": i18n.get("update.success"),
+                    "details": full_output,
+                }
+            )
+
+        except subprocess.TimeoutExpired:
+            app.logger.error("Update timed out after 300 seconds")
             return jsonify(
                 {
                     "message": i18n.get("update.error"),
-                    "details": "\n".join(output_lines),
+                    "details": i18n.get("update.timeout_details"),
                 }
             ), 500
 
-        output_lines.append(i18n.get("update.app_updated"))
-        app.logger.info("App update successful")
-
-        output = result.stdout
-        full_output = "\n".join(output_lines)
-        if output:
-            full_output += "\n\n" + output
-
-        return jsonify(
-            {
-                "message": i18n.get("update.success"),
-                "details": full_output,
-            }
-        )
-
-    except subprocess.TimeoutExpired:
-        app.logger.error("Update timed out after 5 minutes")
-        return jsonify(
-            {
-                "error": i18n.get("update.timeout"),
-                "details": i18n.get("update.timeout_details"),
-            }
-        ), 500
     except Exception as e:
-        app.logger.error(f"Update failed: {str(e)}")
+        app.logger.error(f"Update failed: {str(e)}", exc_info=True)
         return jsonify(
             {
-                "error": i18n.get("update.error"),
+                "message": i18n.get("update.error"),
                 "details": str(e),
             }
         ), 500

@@ -293,22 +293,31 @@ document.getElementById('updateLink').onclick = function(e) {
     updateLink.disabled = true;
 
     fetch('/update', { method: 'POST' })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            if (!r.ok) {
+                return r.json().then(function(data) {
+                    throw new Error(data.error || data.message || 'Update failed with status ' + r.status);
+                }).catch(function() {
+                    throw new Error('Update failed with status ' + r.status);
+                });
+            }
+            return r.json();
+        })
         .then(function(data) {
             topbarDone();
             hideProgress();
             updateLink.classList.remove('updating');
             updateLink.disabled = false;
             var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
-            showMessage(data.message || data.error, data.message ? 'success' : 'error', details);
+            showMessage(data.message || 'Update completed', 'success', details);
         })
         .catch(function(err) {
             topbarDone();
             hideProgress();
             updateLink.classList.remove('updating');
             updateLink.disabled = false;
-            var details = '[' + new Date().toISOString() + ']\n' + err.message;
-            showMessage((_str.messages && _str.messages.network_error) || 'Network error', 'error', details);
+            var details = '[' + new Date().toISOString() + ']\n' + (err.message || err.toString());
+            showMessage(err.message || ((_str.messages && _str.messages.network_error) || 'Update failed'), 'error', details);
         });
 };
 /* ── Theme toggle ──────────────────────────────────────────────────── */
