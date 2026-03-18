@@ -1,0 +1,50 @@
+{
+  "app_name": "YouTube Downloader - Neapolitan Edition",
+  "download": {
+    "placeholder": "Paste your YouTube video link here",
+    "button": "Download",
+    "audio_only_label": "Audio only",
+    "subtitles_label": "Download subtitles",
+    "success": "Download complete!",
+    "error": "Download failed",
+    "error_invalid_url": "Invalid URL. Please paste a valid YouTube link!",
+    "error_unknown": "Unknown error, sorry!",
+    "connection_lost": "Connection lost – the download continues. Refresh the page to see the result.",
+    "not_found": "Download not found",
+    "metadata_error": "Could not retrieve metadata"
+  },
+  "update": {
+    "button": "🔄 Update",
+    "checking": "🔍 Checking for updates...",
+    "updating_ytdlp": "🔧 Updating yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp updated",
+    "ytdlp_already_updated": "✓ yt-dlp already up to date",
+    "ytdlp_error": "✗ yt-dlp error: {error}",
+    "updating_app": "📥 Downloading files from GitHub...",
+    "app_downloading": "⬇️ Downloading files from branch 'main'...",
+    "app_extracting": "📦 Extracting files...",
+    "app_updated": "✓ App updated",
+    "app_error": "✗ App update error: {error}",
+    "success": "✅ Update completed successfully!",
+    "timeout": "Update timed out",
+    "timeout_details": "The operation took too long",
+    "error": "An error occurred during update"
+  },
+  "messages": {
+    "starting": "Starting...",
+    "resuming": "Resuming previous download...",
+    "downloading": "⬇️ Downloading...",
+    "video_not_found": "Could not find the video. Check that the link is correct!",
+    "copy_details": "📋 Copy details",
+    "details_hint": "Click to see details",
+    "close": "Close",
+    "copied": "✓ Copied"
+  },
+  "progress": {
+    "percent": "{percent}% • Speed: {speed} • Size: {size}"
+  },
+  "footer": {
+    "update_link": "🔄 Update",
+    "theme_toggle_title": "Toggle dark/light mode"
+  }
+}

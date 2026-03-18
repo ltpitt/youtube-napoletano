@@ -1,0 +1,50 @@
+{
+  "app_name": "'O Tubb napulitano",
+  "download": {
+    "placeholder": "Miette ccà 'o link d''o video 'e YouTube",
+    "button": "Scarrica",
+    "audio_only_label": "Sulo audio",
+    "subtitles_label": "Scarrica 'e sottotitole",
+    "success": "'O scarricamento è fernuto!",
+    "error": "'O scarricamento s'è arricettato",
+    "error_invalid_url": "URL nun valida. Miette nu link YouTube buono!",
+    "error_unknown": "Errore sconosciuto, scusa!",
+    "connection_lost": "Connessione persa – 'o scarricamento va avanti. Apri 'a pagina d''a capo p' vedé 'o risultato.",
+    "not_found": "'O scarricamento nun s'è truvato",
+    "metadata_error": "Nun songh' riuscuto a piglià 'e metadata"
+  },
+  "update": {
+    "button": "🔄 Aggiorna",
+    "checking": "🔍 Ccheckanno ggià se ce sta na versione nuova...",
+    "updating_ytdlp": "🔧 Aggiurnanno yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp aggiurnato",
+    "ytdlp_already_updated": "✓ yt-dlp già aggiornato",
+    "ytdlp_error": "✗ Errore yt-dlp: {error}",
+    "updating_app": "📥 Scaricannno 'e file dal GitHub...",
+    "app_downloading": "⬇️ Scaricando i file dal branch 'main'...",
+    "app_extracting": "📦 Estraendo i file...",
+    "app_updated": "✓ App aggiurnata",
+    "app_error": "✗ Errore app update: {error}",
+    "success": "✅ Aggiurnamento completato cu successo!",
+    "timeout": "Aggiurnamento: tardà troppo",
+    "timeout_details": "L'operazione tenne troppo tiempo",
+    "error": "Nu pproblemma 'e curiso int'all'aggiurnamiento"
+  },
+  "messages": {
+    "starting": "Sto accumincianno...",
+    "resuming": "Recuperanno 'o scarricamento 'e prima...",
+    "downloading": "⬇️ Sto scarricando...",
+    "video_not_found": "Nun riesco a truvà 'o video. Verifica che 'o link sia corretta!",
+    "copy_details": "📋 Copia 'e dettagli",
+    "details_hint": "Puoza p' vedé 'e dettagli",
+    "close": "Chiozze",
+    "copied": "✓ Copiato"
+  },
+  "progress": {
+    "percent": "{percent}% • Velocità: {speed} • Dimensione: {size}"
+  },
+  "footer": {
+    "update_link": "🔄 Aggiorna",
+    "theme_toggle_title": "Toggle dark/light mode"
+  }
+}
