@@ -234,21 +234,28 @@ window.addEventListener('DOMContentLoaded', function() {
 
 /* ── Update yt-dlp and app ──────────────────────────────────────────── */
 document.getElementById('updateLink').onclick = function(e) {
-    e.preventDefault();
+    if (e.preventDefault) e.preventDefault();
     document.getElementById('messageBox').innerHTML = '';
     topbarStart();
+    var updateLink = document.getElementById('updateLink');
+    updateLink.classList.add('updating');
+    updateLink.disabled = true;
 
     fetch('/update', { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             topbarDone();
             hideProgress();
+            updateLink.classList.remove('updating');
+            updateLink.disabled = false;
             var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
             showMessage(data.message || data.error, data.message ? 'success' : 'error', details);
         })
         .catch(function(err) {
             topbarDone();
             hideProgress();
+            updateLink.classList.remove('updating');
+            updateLink.disabled = false;
             var details = '[' + new Date().toISOString() + ']\n' + err.message;
             showMessage('Errore \'e rete', 'error', details);
         });

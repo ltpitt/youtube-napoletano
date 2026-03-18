@@ -9,7 +9,10 @@
 <body>
     <div class="container">
         <div id="topbar" class="topbar"></div>
-        <h1>'O Tubb napulitano 🌋</h1>
+        <div class="card-header">
+            <h1>'O Tubb napulitano 🌋</h1>
+            <button id="settingsBtn" class="settings-btn" title="Apri impostazioni" aria-label="Impostazioni">⚙️</button>
+        </div>
         <form id="downloadForm">
             <input id="urlInput" type="text" name="url" placeholder="Miette ccà 'o link d''o video 'e YouTube" required>
             <div id="metaCard" class="meta-card" style="display:none">
@@ -42,8 +45,7 @@
         </div>
         <div id="messageBox"></div>
         <div class="footer">
-            <a href="#" id="updateLink">🔄 Aggiorna</a>
-            <button id="settingsBtn" class="settings-btn" title="Apri impostazioni" aria-label="Impostazioni">⚙️</button>
+            <!-- Footer is now clean -->
         </div>
     </div>
     
@@ -55,6 +57,9 @@
             <button id="closeSettingsBtn" class="close-settings" aria-label="Chiudi impostazioni">✕</button>
         </div>
         <div class="settings-content">
+            <div class="settings-group">
+                <button id="updateLink" class="update-btn">🔄 Aggiorna</button>
+            </div>
             <div class="settings-group">
                 <label for="languageSelector">Lingua / Language:</label>
                 <select id="languageSelector" class="language-selector"></select>

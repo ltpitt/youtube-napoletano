@@ -20,6 +20,7 @@ from flask import (
 from youtube_napoletano import config
 from youtube_napoletano.downloader import parse_progress, update_ytdlp, fetch_metadata
 from youtube_napoletano.utils import should_update_ytdlp
+from youtube_napoletano.i18n import i18n
 
 # Flask needs to find templates and static in parent directory
 template_dir = Path(__file__).parent.parent / "templates"
@@ -252,6 +253,26 @@ def _drain_queue(
 def index() -> str:
     """Serve the main page."""
     return render_template("index.html")
+
+
+@app.route("/api/i18n/languages")
+def get_languages() -> Any:
+    """Return available languages."""
+    return jsonify(i18n.get_available_languages())
+
+
+@app.route("/api/i18n/set-language", methods=["POST"])
+def set_language() -> Any:
+    """Set the current language."""
+    lang = request.json.get("language", "nap") if request.json else "nap"
+    i18n.set_language(lang)
+    return jsonify({"current_language": i18n.current_language})
+
+
+@app.route("/api/i18n/strings")
+def get_i18n_strings() -> Any:
+    """Return all strings for the current language for UI use."""
+    return jsonify(i18n.translations.get(i18n.current_language, {}))
 
 
 @app.route("/status/<download_id>")
