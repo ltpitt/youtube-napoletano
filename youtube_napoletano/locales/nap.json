@@ -38,9 +38,16 @@
     "copy_details": "📋 Copia 'e dettagli",
     "details_hint": "Puoza p' vedé 'e dettagli",
     "close": "Chiozze",
-    "copied": "✓ Copiato"
+    "copied": "✓ Copiato",
+    "merging": "Sto azzeccanno 'e piezze...",
+    "converting": "Sto cunvertenno...",
+    "downloading_file": "Sto scarricanno...",
+    "cleaning_up": "Sto pulizianno...",
+    "finalizing": "Scarricamento cumpletato, sto pulizianno...",
+    "system_error": "'O scarricamento s'è arricettato p' nu errore 'e sistema",
+    "network_error": "Errore 'e rete"
   },
   "progress": {
     "percent": "{percent}% • Velocità: {speed} • Dimensione: {size}"
-  },
+  }
 }

@@ -38,9 +38,16 @@
     "copy_details": "📋 Copy details",
     "details_hint": "Click to see details",
     "close": "Close",
-    "copied": "✓ Copied"
+    "copied": "✓ Copied",
+    "merging": "Merging files...",
+    "converting": "Converting...",
+    "downloading_file": "Downloading...",
+    "cleaning_up": "Cleaning up...",
+    "finalizing": "Finalizing download, cleaning up...",
+    "system_error": "Download failed due to a system error",
+    "network_error": "Network error"
   },
   "progress": {
     "percent": "{percent}% • Speed: {speed} • Size: {size}"
-  },
+  }
 }

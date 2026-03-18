@@ -78,7 +78,7 @@ function showMessage(text, type, details) {
     }
     
     var detailsHint = (_str.messages && _str.messages.details_hint) || 'Click to see details';
-    var closeLabel = (_str.messages && _str.messages.close) || 'Close';
+    var closeLabel  = (_str.messages && _str.messages.close) || 'Close';
     var headerHtml = '<div class="message-icon">' + icon + '</div>' +
                      '<div class="message-main">' +
                      '  <div class="message-title">' + escapeHtml(displayTitle) + '</div>' +

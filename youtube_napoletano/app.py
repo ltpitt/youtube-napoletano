@@ -99,15 +99,15 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
                 if progress:
                     state["progress"] = progress
                 if "[Merger]" in line:
-                    state["last_message"] = "Sto azzeccanno 'e piezze..."
+                    state["last_message"] = i18n.get("messages.merging")
                 elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
-                    state["last_message"] = "Sto cunvertenno..."
+                    state["last_message"] = i18n.get("messages.converting")
                 elif "[download] Destination:" in line:
-                    state["last_message"] = "Sto scarricanno..."
+                    state["last_message"] = i18n.get("messages.downloading_file")
                 elif (
                     "Deleting original file" in line or "Removing original file" in line
                 ):
-                    state["last_message"] = "Sto pulizianno..."
+                    state["last_message"] = i18n.get("messages.cleaning_up")
             try:
                 task_queue.put_nowait(("line", line))
             except queue.Full:
@@ -119,13 +119,13 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
         if process.returncode == 0:
             with _downloads_lock:
                 state["status"] = "complete"
-                state["last_message"] = "'O scarricamento è fernuto!"
+                state["last_message"] = i18n.get("download.success")
             try:
                 task_queue.put_nowait(("complete", None))
             except queue.Full:
                 pass  # _drain_queue will fall back to the state dict
         else:
-            err_msg = "'O scarricamento s'è arricettato"
+            err_msg = i18n.get("download.error")
             err_details = ""
             if stderr:
                 err_details = stderr.strip()[-500:]  # Last 500 chars of stderr
@@ -142,11 +142,9 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
         app.logger.error("Download thread error", exc_info=True)
         with _downloads_lock:
             state["status"] = "error"
-            state["error"] = "'O scarricamento s'è arricettato p' nu errore 'e sistema"
+            state["error"] = i18n.get("messages.system_error")
         try:
-            task_queue.put_nowait(
-                ("error", "'O scarricamento s'è arricettato p' nu errore 'e sistema")
-            )
+            task_queue.put_nowait(("error", i18n.get("messages.system_error")))
         except queue.Full:
             pass
     finally:
@@ -163,19 +161,19 @@ def _line_to_sse_events(line: str) -> Generator[str, None, None]:
     if progress:
         yield f"event: progress\ndata: {json.dumps(progress)}\n\n"
         if float(progress["percent"]) >= 99.9:
-            msg = json.dumps({"message": "Scarricamento cumpletato, sto pulizianno..."})
+            msg = json.dumps({"message": i18n.get("messages.finalizing")})
             yield f"event: status\ndata: {msg}\n\n"
     if "[Merger]" in line:
-        msg = json.dumps({"message": "Sto azzeccanno 'e piezze..."})
+        msg = json.dumps({"message": i18n.get("messages.merging")})
         yield f"event: status\ndata: {msg}\n\n"
     elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
-        msg = json.dumps({"message": "Sto cunvertenno..."})
+        msg = json.dumps({"message": i18n.get("messages.converting")})
         yield f"event: status\ndata: {msg}\n\n"
     elif "[download] Destination:" in line:
-        msg = json.dumps({"message": "Sto scarricanno..."})
+        msg = json.dumps({"message": i18n.get("messages.downloading_file")})
         yield f"event: status\ndata: {msg}\n\n"
     elif "Deleting original file" in line or "Removing original file" in line:
-        msg = json.dumps({"message": "Sto pulizianno..."})
+        msg = json.dumps({"message": i18n.get("messages.cleaning_up")})
         yield f"event: status\ndata: {msg}\n\n"
 
 
@@ -208,15 +206,13 @@ def _drain_queue(
                         msg = json.dumps(
                             {
                                 "message": state.get("last_message")
-                                or "'O scarricamento è fernuto!"
+                                or i18n.get("download.success")
                             }
                         )
                         yield f"event: complete\ndata: {msg}\n\n"
                         break
                     elif final_status == "error":
-                        err_msg = (
-                            state.get("error") or "'O scarricamento s'è arricettato"
-                        )
+                        err_msg = state.get("error") or i18n.get("download.error")
                         err_details = state.get("error_details", "")
                         error_data = {"error": err_msg}
                         if err_details:
@@ -228,7 +224,7 @@ def _drain_queue(
             if event_type == "done":
                 break
             elif event_type == "complete":
-                msg = json.dumps({"message": "'O scarricamento è fernuto!"})
+                msg = json.dumps({"message": i18n.get("download.success")})
                 yield f"event: complete\ndata: {msg}\n\n"
                 break
             elif event_type == "error":
@@ -285,7 +281,7 @@ def download_status(download_id: str) -> Any:
     with _downloads_lock:
         state = _download_states.get(download_id)
         if state is None:
-            return jsonify({"error": "'O scarricamento nun s'è truvato"}), 404
+            return jsonify({"error": i18n.get("download.not_found")}), 404
         snapshot = {
             "status": state["status"],
             "progress": state["progress"],
@@ -306,7 +302,7 @@ def metadata() -> Any:
     video_url = (request.args.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
         return (
-            jsonify({"error": "URL nun valida. Miette nu link YouTube buono!"}),
+            jsonify({"error": i18n.get("download.error_invalid_url")}),
             400,
         )
     try:
@@ -314,7 +310,7 @@ def metadata() -> Any:
         return jsonify({"metadata": meta})
     except Exception as e:
         app.logger.debug(f"Metadata fetch error: {e}")
-        return jsonify({"error": "Nun songh' riuscuto a piglià 'e metadata"}), 500
+        return jsonify({"error": i18n.get("download.metadata_error")}), 500
 
 
 @app.route("/download_stream")
@@ -341,7 +337,7 @@ def download_stream() -> Response:
         with _downloads_lock:
             state = _download_states.get(reconnect_id)
             if state is None:
-                err = json.dumps({"error": "'O scarricamento nun s'è truvato"})
+                err = json.dumps({"error": i18n.get("download.not_found")})
                 return Response(
                     f"event: error_event\ndata: {err}\n\n",
                     mimetype="text/event-stream",
@@ -364,12 +360,12 @@ def download_stream() -> Response:
 
             if snap["status"] == "complete":
                 msg = json.dumps(
-                    {"message": snap["last_message"] or "'O scarricamento è fernuto!"}
+                    {"message": snap["last_message"] or i18n.get("download.success")}
                 )
                 yield f"event: complete\ndata: {msg}\n\n"
                 return
             if snap["status"] == "error":
-                err_msg = snap["error"] or "'O scarricamento s'è arricettato"
+                err_msg = snap["error"] or i18n.get("download.error")
                 yield f"event: error_event\ndata: {json.dumps({'error': err_msg})}\n\n"
                 return
             # Still in progress – drain the live queue
@@ -382,7 +378,7 @@ def download_stream() -> Response:
     # ── New download ────────────────────────────────────────────────────────
     video_url: str | None = (request.args.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
-        err = json.dumps({"error": "URL nun valida. Miette nu link YouTube buono!"})
+        err = json.dumps({"error": i18n.get("download.error_invalid_url")})
         return Response(
             f"event: error_event\ndata: {err}\n\n", mimetype="text/event-stream"
         )
@@ -456,7 +452,7 @@ def download_video() -> Any:
 
     video_url: str = (request.form.get("url") or "").strip()
     if not video_url or not YOUTUBE_URL_RE.match(video_url):
-        return jsonify({"error": "URL nun valida. Miette nu link YouTube buono!"}), 400
+        return jsonify({"error": i18n.get("download.error_invalid_url")}), 400
     audio_only: bool = "audio_only" in request.form
     subtitles: bool = "subtitles" in request.form
     output_dir: str = OUTPUT_DIR
@@ -480,12 +476,10 @@ def download_video() -> Any:
             command.extend(["--write-sub", "--write-auto-sub"])
         run_yt_dlp_command(command)
         app.logger.info("Download successful")
-        return jsonify({"message": "'O scarricamento è fernuto!"})
+        return jsonify({"message": i18n.get("download.success")})
     except Exception as e:
         app.logger.error(f"Download failed: {str(e)}")
-        return jsonify(
-            {"error": "'O scarricamento s'è arricettato", "details": str(e)}
-        ), 500
+        return jsonify({"error": i18n.get("download.error"), "details": str(e)}), 500
 
 
 @app.route("/update", methods=["POST"])
@@ -497,18 +491,20 @@ def update() -> Any:
         # Step 1: Update yt-dlp if needed
         if should_update_ytdlp(UPDATE_TIMESTAMP_FILE):
             app.logger.info("Updating yt-dlp...")
-            output_lines.append("🔧 Aggiornando yt-dlp...")
+            output_lines.append(i18n.get("update.updating_ytdlp"))
             try:
                 update_ytdlp()
-                output_lines.append("✓ yt-dlp aggiornato")
+                output_lines.append(i18n.get("update.ytdlp_updated"))
             except Exception as e:
-                output_lines.append(f"✗ Errore yt-dlp: {str(e)}")
+                output_lines.append(
+                    i18n.get("update.ytdlp_error").replace("{error}", str(e))
+                )
         else:
-            output_lines.append("✓ yt-dlp già aggiornato")
+            output_lines.append(i18n.get("update.ytdlp_already_updated"))
 
         # Step 2: Update app from GitHub using update.sh
         app.logger.info("Updating app from GitHub...")
-        output_lines.append("🔄 Aggiornando l'app da GitHub...")
+        output_lines.append(i18n.get("update.updating_app"))
 
         result = subprocess.run(
             ["bash", "scripts/update.sh"],
@@ -521,15 +517,17 @@ def update() -> Any:
         if result.returncode != 0:
             error_msg = result.stderr or "Script exit code: " + str(result.returncode)
             app.logger.error(f"App update failed: {error_msg}")
-            output_lines.append(f"✗ Errore app update: {error_msg}")
+            output_lines.append(
+                i18n.get("update.app_error").replace("{error}", error_msg)
+            )
             return jsonify(
                 {
-                    "message": "L'aggiurnamento s'è arricettato",
+                    "message": i18n.get("update.error"),
                     "details": "\n".join(output_lines),
                 }
             ), 500
 
-        output_lines.append("✓ App aggiornata")
+        output_lines.append(i18n.get("update.app_updated"))
         app.logger.info("App update successful")
 
         output = result.stdout
@@ -539,7 +537,7 @@ def update() -> Any:
 
         return jsonify(
             {
-                "message": "✅ Aggiornamento completato cu successo!",
+                "message": i18n.get("update.success"),
                 "details": full_output,
             }
         )
@@ -548,15 +546,15 @@ def update() -> Any:
         app.logger.error("Update timed out after 5 minutes")
         return jsonify(
             {
-                "error": "Aggiurnamento: tardà troppo",
-                "details": "Ll'operazione tenne troppo tiempo",
+                "error": i18n.get("update.timeout"),
+                "details": i18n.get("update.timeout_details"),
             }
         ), 500
     except Exception as e:
         app.logger.error(f"Update failed: {str(e)}")
         return jsonify(
             {
-                "error": "Nu pproblemma 'e curiso int'all'aggiurnamiento",
+                "error": i18n.get("update.error"),
                 "details": str(e),
             }
         ), 500
