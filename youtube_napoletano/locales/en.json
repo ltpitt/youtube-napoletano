@@ -14,7 +14,7 @@
     "metadata_error": "Could not retrieve metadata"
   },
   "update": {
-    "button": "🔄 Update",
+    "button": "Update",
     "checking": "🔍 Checking for updates...",
     "updating_ytdlp": "🔧 Updating yt-dlp...",
     "ytdlp_updated": "✓ yt-dlp updated",

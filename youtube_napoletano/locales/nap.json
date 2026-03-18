@@ -14,7 +14,7 @@
     "metadata_error": "Nun songh' riuscuto a piglià 'e metadata"
   },
   "update": {
-    "button": "🔄 Aggiorna",
+    "button": "Aggiorna",
     "checking": "🔍 Ccheckanno ggià se ce sta na versione nuova...",
     "updating_ytdlp": "🔧 Aggiurnanno yt-dlp...",
     "ytdlp_updated": "✓ yt-dlp aggiurnato",

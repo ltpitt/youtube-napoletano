@@ -214,7 +214,7 @@ body.light-mode .settings-btn:hover{
   right:0;
   width:320px;
   height:100vh;
-  background:rgba(0,0,0,0.85);
+  background:rgba(0,0,0,0.95);
   color:var(--text-color);
   overflow-y:auto;
   box-shadow:-2px 0 10px rgba(0,0,0,0.3);
