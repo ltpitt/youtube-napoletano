@@ -15,6 +15,8 @@ cd "$PROJECT_ROOT" || exit 1
 REPO="ltpitt/youtube-napoletano"
 BRANCH="main"
 TEMP_DIR=".update_temp"
+ETAG_FILE=".last_etag"
+ZIP_URL="https://github.com/$REPO/archive/refs/heads/$BRANCH.zip"
 
 echo "🔄 Aggiornando youtube-napoletano da GitHub..."
 
@@ -32,17 +34,31 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Download latest ZIP from GitHub
-echo "⬇️  Scaricando i file dal branch '$BRANCH'..."
+# Check for curl
 if ! command -v curl &> /dev/null; then
     echo "❌ Errore: curl non trovato. Installa curl per procedere."
     exit 1
 fi
 
+# ETag check: skip all disk activity if the repository has not changed.
+# If curl fails silently, REMOTE_ETAG will be empty and the guard below
+# ensures we fall through to a full update rather than skip it.
+echo "🔍 Controllo aggiornamenti disponibili..."
+REMOTE_ETAG=$(curl -sI "$ZIP_URL" | grep -i '^etag:' | awk '{print $2}' | tr -d '\r\n"')
+LOCAL_ETAG=$(cat "$ETAG_FILE" 2>/dev/null || true)
+
+if [ -n "$REMOTE_ETAG" ] && [ "$REMOTE_ETAG" = "$LOCAL_ETAG" ]; then
+    echo "✅ Nessun aggiornamento disponibile. Uscita per risparmiare attività disco."
+    exit 0
+fi
+
+# Download latest ZIP from GitHub
+echo "⬇️  Scaricando i file dal branch '$BRANCH'..."
+
 ZIP_FILE="$TEMP_DIR/repo.zip"
 mkdir -p "$TEMP_DIR"
 
-if ! curl -L -o "$ZIP_FILE" "https://github.com/$REPO/archive/refs/heads/$BRANCH.zip" 2>/dev/null; then
+if ! curl -L -o "$ZIP_FILE" "$ZIP_URL" 2>/dev/null; then
     echo "❌ Errore: Non riesco a scaricare i file da GitHub."
     exit 1
 fi
@@ -102,6 +118,11 @@ done
 # Copy files
 echo "📋 Aggiornando i file..."
 eval "rsync -av --inplace $EXCLUDE_ARGS '$EXTRACTED_DIR/' '.'"
+
+# Save ETag so next run can skip if nothing changed
+if [ -n "$REMOTE_ETAG" ]; then
+    echo "$REMOTE_ETAG" > "$ETAG_FILE"
+fi
 
 echo ""
 echo "✅ Aggiornamento completato con successo!"
