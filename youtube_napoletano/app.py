@@ -517,7 +517,9 @@ def update() -> Any:
             )
 
             if result.returncode != 0:
-                error_msg = result.stderr or "Script exit code: " + str(result.returncode)
+                error_msg = result.stderr or "Script exit code: " + str(
+                    result.returncode
+                )
                 app.logger.error(f"App update failed: {error_msg}")
                 output_lines.append(
                     i18n.get("update.app_error").replace("{error}", error_msg)
