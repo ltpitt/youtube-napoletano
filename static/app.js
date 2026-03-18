@@ -1,7 +1,9 @@
 var DOWNLOAD_ID_KEY = 'yt_napoletano_download_id';
+var _str = {};
 
 /* ── i18n translations ───────────────────────────────────────────────── */
 function applyI18nTranslations(strings) {
+    _str = strings;
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
         var parts = el.getAttribute('data-i18n').split('.');
         var val = strings;
@@ -75,19 +77,22 @@ function showMessage(text, type, details) {
         }
     }
     
+    var detailsHint = (_str.messages && _str.messages.details_hint) || 'Click to see details';
+    var closeLabel = (_str.messages && _str.messages.close) || 'Close';
     var headerHtml = '<div class="message-icon">' + icon + '</div>' +
                      '<div class="message-main">' +
                      '  <div class="message-title">' + escapeHtml(displayTitle) + '</div>' +
-                     (hasDetails ? '  <div class="message-hint">Puoza p\' vedé \'e dettagli</div>' : '') +
+                     (hasDetails ? '  <div class="message-hint">' + escapeHtml(detailsHint) + '</div>' : '') +
                      '</div>' +
-                     '<button class="message-close" onclick="event.stopPropagation(); this.parentElement.remove()" aria-label="Chiozze">×</button>';
+                     '<button class="message-close" onclick="event.stopPropagation(); this.parentElement.remove()" aria-label="' + escapeHtml(closeLabel) + '">×</button>';
     el.innerHTML = headerHtml;
     
     if (hasDetails) {
         var detailsEl = document.createElement('div');
         detailsEl.className = 'message-details';
+        var copyLabel = (_str.messages && _str.messages.copy_details) || '📋 Copy details';
         detailsEl.innerHTML = '<pre class="message-trace">' + escapeHtml(details) + '</pre>' +
-                             '<button class="message-copy" onclick="event.stopPropagation(); copyToClipboard(this)">📋 Copia \'e dettagli</button>';
+                             '<button class="message-copy" onclick="event.stopPropagation(); copyToClipboard(this)">' + escapeHtml(copyLabel) + '</button>';
         el.appendChild(detailsEl);
         el.onclick = function(e) {
             if (e.target.closest('.message-close') || e.target.closest('.message-copy')) return;
@@ -107,7 +112,7 @@ function copyToClipboard(btn) {
     var details = btn.parentElement.querySelector('pre').textContent;
     navigator.clipboard.writeText(details).then(function() {
         var orig = btn.textContent;
-        btn.textContent = '✓ Copiato';
+        btn.textContent = (_str.messages && _str.messages.copied) || '✓ Copied';
         setTimeout(function() { btn.textContent = orig; }, 2000);
     });
 }
@@ -133,7 +138,7 @@ function renderMetadata(meta, originalUrl) {
         card.style.display = 'flex';
     } else {
         card.style.display = 'none';
-        showMessage('Nun riesco a truvà \'o video. Verifica che \'o link sia corretta!', 'error');
+        showMessage((_str.messages && _str.messages.video_not_found) || 'Could not find the video.', 'error');
     }
 }
 
@@ -177,7 +182,7 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
 
     messageBox.innerHTML = '';
     topbarStart();
-    showProgress('<span class="progress-icon">⬇️</span><span>' + (initialMessage || "Sto accumincianno...") + '</span>');
+    showProgress('<span class="progress-icon">⬇️</span><span>' + (initialMessage || (_str.messages && _str.messages.starting) || 'Starting...') + '</span>');
 
     var downloadFinished = false;
     var eventSource = new EventSource(eventSourceUrl);
@@ -196,7 +201,8 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
     eventSource.addEventListener('progress', function(e) {
         var data = JSON.parse(e.data);
         progressBar.style.width = data.percent + '%';
-        progressInfo.textContent = data.percent + '% • Velocità: ' + data.speed + ' • Dimensione: ' + data.size;
+        var fmt = (_str.progress && _str.progress.percent) || '{percent}% • {speed} • {size}';
+        progressInfo.textContent = fmt.replace('{percent}', data.percent).replace('{speed}', data.speed).replace('{size}', data.size);
     });
 
     eventSource.addEventListener('complete', function(e) {
@@ -204,7 +210,7 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
         eventSource.close();
         hideProgress();
         clearDownloadId();
-        showMessage(JSON.parse(e.data).message || "'O scarricamento è fernuto!", 'success');
+        showMessage(JSON.parse(e.data).message || (_str.download && _str.download.success) || 'Download complete!', 'success');
     });
 
     eventSource.addEventListener('error_event', function(e) {
@@ -213,7 +219,7 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
         hideProgress();
         clearDownloadId();
         var data = JSON.parse(e.data);
-        var errorMsg = data.error || 'Errore sconosciuto, scusa!';
+        var errorMsg = data.error || (_str.download && _str.download.error_unknown) || 'Unknown error';
         var details = data.details || '';
         showMessage(errorMsg, 'error', details);
     });
@@ -222,14 +228,20 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
         if (downloadFinished) { return; }
         eventSource.close();
         hideProgress();
-        showMessage("Connessione persa \u2013 'o scarricamento va avanti. Apri 'a pagina d''a capo p' ved\u00e9 'o risultato.", 'error');
+        showMessage((_str.download && _str.download.connection_lost) || 'Connection lost – the download continues.', 'error');
     };
 }
 
 /* ── Form submit ─────────────────────────────────────────────────────── */
 document.getElementById('downloadForm').onsubmit = function(event) {
-    event.preventDefault();
-    var fd = new FormData(this);
+    event.preventDefault();    var urlInput = document.getElementById('urlInput');
+    if (!urlInput.value.trim()) {
+        var errMsg = (_str.download && _str.download.error_invalid_url) || 'Please enter a valid URL';
+        urlInput.setCustomValidity(errMsg);
+        urlInput.reportValidity();
+        return;
+    }
+    urlInput.setCustomValidity('');    var fd = new FormData(this);
     connectToDownloadStream(
         '/download_stream?url=' + encodeURIComponent(fd.get('url')) +
         '&audio_only=' + (fd.get('audio_only') ? 'true' : 'false') +
@@ -249,15 +261,15 @@ window.addEventListener('DOMContentLoaded', function() {
             if (data.error) { clearDownloadId(); return; }
             if (data.status === 'complete') {
                 clearDownloadId();
-                showMessage(data.last_message || "'O scarricamento è fernuto!", 'success');
+                showMessage(data.last_message || (_str.download && _str.download.success) || 'Download complete!', 'success');
             } else if (data.status === 'error') {
                 clearDownloadId();
-                showMessage(data.error || "'O scarricamento s'è arricettato", 'error');
+                showMessage(data.error || (_str.download && _str.download.error) || 'Download failed', 'error');
             } else {
                 if (data.metadata) { renderMetadata(data.metadata, data.url); }
                 connectToDownloadStream(
                     '/download_stream?download_id=' + id,
-                    "Recuperanno 'o scarricamento 'e prima..."
+                    (_str.messages && _str.messages.resuming) || 'Resuming previous download...'
                 );
             }
         })
@@ -289,7 +301,7 @@ document.getElementById('updateLink').onclick = function(e) {
             updateLink.classList.remove('updating');
             updateLink.disabled = false;
             var details = '[' + new Date().toISOString() + ']\n' + err.message;
-            showMessage('Errore \'e rete', 'error', details);
+            showMessage((_str.messages && _str.messages.network_error) || 'Network error', 'error', details);
         });
 };
 /* ── Theme toggle ──────────────────────────────────────────────────── */
@@ -450,7 +462,7 @@ document.getElementById('updateLink').onclick = function(e) {
             })
             .catch(function(err) { 
                 renderMetadata(null); 
-                showMessage('Errore \'e rete o URL nun valida', 'error');
+                showMessage((_str.download && _str.download.metadata_error) || 'Network error', 'error');
             });
     }
 
@@ -459,6 +471,7 @@ document.getElementById('updateLink').onclick = function(e) {
         setTimeout(tryFetch, 50);
     });
     input.addEventListener('input', function() {
+        input.setCustomValidity('');
         if (timeout) { clearTimeout(timeout); }
         if (!input.value || !input.value.trim()) { renderMetadata(null); return; }
         timeout = setTimeout(function() { topbarStart(); tryFetch(); }, 600);
