@@ -26,6 +26,13 @@ function loadAndApplyTranslations() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Clean up any stale "updating" state (e.g., from page reload during update)
+    var updateLink = document.getElementById('updateLink');
+    if (updateLink) {
+        updateLink.classList.remove('updating');
+        updateLink.disabled = false;
+    }
+    
     var savedLang = localStorage.getItem('language') || 'nap';
     fetch('/api/i18n/set-language', {
         method: 'POST',
