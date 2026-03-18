@@ -6,7 +6,9 @@ import pytest
 from youtube_napoletano.downloader import parse_progress
 
 
-def _make_completed_process(stdout: str = "", stderr: str = "") -> subprocess.CompletedProcess:
+def _make_completed_process(
+    stdout: str = "", stderr: str = ""
+) -> subprocess.CompletedProcess:
     proc = MagicMock(spec=subprocess.CompletedProcess)
     proc.stdout = stdout
     proc.stderr = stderr
@@ -78,7 +80,9 @@ class TestUpdateYtdlp:
             patch.object(
                 downloader,
                 "run_yt_dlp_command",
-                return_value=_make_completed_process(stdout="Updating to 2024.01.01..."),
+                return_value=_make_completed_process(
+                    stdout="Updating to 2024.01.01..."
+                ),
             ),
             patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
         ):
