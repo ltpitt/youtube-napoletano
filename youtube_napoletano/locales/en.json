@@ -43,8 +43,4 @@
   "progress": {
     "percent": "{percent}% • Speed: {speed} • Size: {size}"
   },
-  "footer": {
-    "update_link": "🔄 Update",
-    "theme_toggle_title": "Toggle dark/light mode"
-  }
 }
