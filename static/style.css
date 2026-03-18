@@ -4,6 +4,7 @@
   --accent-2: #0054a6;
   --muted: rgba(255,255,255,0.7);
   --card: rgba(0,0,0,0.6);
+  --section-spacing: 10px;
   --text-color: #fff;
   --bg-color: url('/static/naples-dark-mode.jpg');
 }
@@ -118,6 +119,7 @@ body.light-mode .error{background:linear-gradient(135deg, rgba(229,57,53,0.2), r
 @media(min-width:720px){
   .container{padding:24px}
   h1{font-size:1.6rem}
+  :root{ --section-spacing: 14px; }
 }
 /* Header Actions */
 .header-actions{
@@ -274,7 +276,7 @@ body.light-mode .settings-drawer{
   margin-bottom:24px;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:var(--section-spacing);
 }
 .settings-group-title{
   margin:0;
@@ -282,8 +284,7 @@ body.light-mode .settings-drawer{
   font-weight:600;
   color:var(--muted);
   letter-spacing:0.5px;
-  /* match the vertical spacing used by the language label/select pair */
-  margin-bottom:10px;
+  /* spacing between title/label and the following control is controlled by --section-spacing */
 }
 .update-btn{
   width:100%;
