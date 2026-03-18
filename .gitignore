@@ -209,3 +209,4 @@ __marimo__/
 # Project-specific
 config.py
 yt-dlp-last-update.txt
+.last_etag

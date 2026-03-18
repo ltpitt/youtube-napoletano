@@ -47,13 +47,19 @@ def parse_progress(line: str) -> Optional[Dict[str, str]]:
 
 def update_ytdlp() -> None:
     try:
-        run_yt_dlp_command(
+        result = run_yt_dlp_command(
             [PYTHON_PATH, YTDLP_PATH, "--no-check-certificate", "-U"],
             timeout=30,
             check=False,
         )
-        Path(UPDATE_TIMESTAMP_FILE).write_text(datetime.now().isoformat())
-        current_app.logger.info("yt-dlp updated successfully")
+        output = (result.stdout or "") + "\n" + (result.stderr or "")
+        if "yt-dlp is up to date" in output or "Updating to" in output:
+            Path(UPDATE_TIMESTAMP_FILE).write_text(datetime.now().isoformat())
+            current_app.logger.info("yt-dlp updated successfully")
+        else:
+            current_app.logger.warning(
+                "yt-dlp update check did not confirm success; skipping timestamp write"
+            )
     except Exception as e:
         current_app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
 
