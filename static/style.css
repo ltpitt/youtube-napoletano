@@ -275,9 +275,12 @@ body.light-mode .settings-btn:hover{
   opacity:0.9;
   transform:translateY(-1px);
 }
+.update-btn:active{
+  transform:translateY(1px);
+}
 .update-btn.updating{
   opacity:0.6;
-  cursor:not-allowed;
+  pointer-events:none;
 }
 .settings-group label{
   font-size:0.9rem;
