@@ -86,6 +86,10 @@ class I18n:
         return {
             "nap": "🌋 Napoletano",
             "en": "🇬🇧 English",
+            "it": "🇮🇹 Italiano",
+            "es": "🇪🇸 Español",
+            "fr": "🇫🇷 Français",
+            "de": "🇩🇪 Deutsch",
         }
 
     def __call__(self, key: str, **kwargs: Any) -> str:

@@ -1,0 +1,53 @@
+{
+  "app_name": "YouTube Downloader - Edizione Napoletana",
+  "download": {
+    "placeholder": "Incolla qui il link del video YouTube",
+    "button": "Scarica",
+    "audio_only_label": "Solo audio",
+    "subtitles_label": "Scarica sottotitoli",
+    "success": "Download completato!",
+    "error": "Download non riuscito",
+    "error_invalid_url": "URL non valida. Incolla un link YouTube valido!",
+    "error_unknown": "Errore sconosciuto, scusa!",
+    "connection_lost": "Connessione persa – il download continua. Aggiorna la pagina per vedere il risultato.",
+    "not_found": "Download non trovato",
+    "metadata_error": "Impossibile recuperare i metadati"
+  },
+  "update": {
+    "button": "Aggiorna",
+    "checking": "🔍 Controllo aggiornamenti...",
+    "updating_ytdlp": "🔧 Aggiornamento yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp aggiornato",
+    "ytdlp_already_updated": "✓ yt-dlp già aggiornato",
+    "ytdlp_error": "✗ Errore yt-dlp: {error}",
+    "updating_app": "📥 Download file da GitHub...",
+    "app_downloading": "⬇️ Download file dal ramo 'main'...",
+    "app_extracting": "📦 Estrazione file...",
+    "app_updated": "✓ App aggiornata",
+    "app_error": "✗ Errore aggiornamento app: {error}",
+    "success": "✅ Aggiornamento completato con successo!",
+    "timeout": "Timeout aggiornamento",
+    "timeout_details": "L'operazione ha richiesto troppo tempo",
+    "error": "Si è verificato un errore durante l'aggiornamento"
+  },
+  "messages": {
+    "starting": "Avvio...",
+    "resuming": "Ripresa download precedente...",
+    "downloading": "⬇️ Download in corso...",
+    "video_not_found": "Impossibile trovare il video. Verifica che il link sia corretto!",
+    "copy_details": "📋 Copia dettagli",
+    "details_hint": "Clicca per vedere i dettagli",
+    "close": "Chiudi",
+    "copied": "✓ Copiato",
+    "merging": "Unione file...",
+    "converting": "Conversione...",
+    "downloading_file": "Download...",
+    "cleaning_up": "Pulizia...",
+    "finalizing": "Finalizzazione download, pulizia...",
+    "system_error": "Download non riuscito a causa di un errore di sistema",
+    "network_error": "Errore di rete"
+  },
+  "progress": {
+    "percent": "{percent}% • Velocità: {speed} • Dimensione: {size}"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "app_name": "Téléchargeur YouTube - Édition Napolitaine",
+  "download": {
+    "placeholder": "Collez votre lien vidéo YouTube ici",
+    "button": "Télécharger",
+    "audio_only_label": "Audio uniquement",
+    "subtitles_label": "Télécharger les sous-titres",
+    "success": "Téléchargement terminé !",
+    "error": "Téléchargement échoué",
+    "error_invalid_url": "URL invalide. Veuillez coller un lien YouTube valide !",
+    "error_unknown": "Erreur inconnue, désolé !",
+    "connection_lost": "Connexion perdue – le téléchargement continue. Rafraîchissez la page pour voir le résultat.",
+    "not_found": "Téléchargement introuvable",
+    "metadata_error": "Impossible de récupérer les métadonnées"
+  },
+  "update": {
+    "button": "Mettre à jour",
+    "checking": "🔍 Vérification des mises à jour...",
+    "updating_ytdlp": "🔧 Mise à jour de yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp mis à jour",
+    "ytdlp_already_updated": "✓ yt-dlp déjà à jour",
+    "ytdlp_error": "✗ Erreur yt-dlp : {error}",
+    "updating_app": "📥 Téléchargement des fichiers depuis GitHub...",
+    "app_downloading": "⬇️ Téléchargement des fichiers depuis la branche 'main'...",
+    "app_extracting": "📦 Extraction des fichiers...",
+    "app_updated": "✓ Application mise à jour",
+    "app_error": "✗ Erreur de mise à jour de l'application : {error}",
+    "success": "✅ Mise à jour terminée avec succès !",
+    "timeout": "Délai d'expiration de la mise à jour",
+    "timeout_details": "L'opération a pris trop de temps",
+    "error": "Une erreur s'est produite lors de la mise à jour"
+  },
+  "messages": {
+    "starting": "Démarrage...",
+    "resuming": "Reprise du téléchargement précédent...",
+    "downloading": "⬇️ Téléchargement en cours...",
+    "video_not_found": "Impossible de trouver la vidéo. Vérifiez que le lien est correct !",
+    "copy_details": "📋 Copier les détails",
+    "details_hint": "Cliquez pour voir les détails",
+    "close": "Fermer",
+    "copied": "✓ Copié",
+    "merging": "Fusion des fichiers...",
+    "converting": "Conversion...",
+    "downloading_file": "Téléchargement...",
+    "cleaning_up": "Nettoyage...",
+    "finalizing": "Finalisation du téléchargement, nettoyage...",
+    "system_error": "Téléchargement échoué en raison d'une erreur système",
+    "network_error": "Erreur réseau"
+  },
+  "progress": {
+    "percent": "{percent}% • Vitesse : {speed} • Taille : {size}"
+  }
+}

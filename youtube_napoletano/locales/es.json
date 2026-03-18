@@ -1,0 +1,53 @@
+{
+  "app_name": "Descargador de YouTube - Edición Napolitana",
+  "download": {
+    "placeholder": "Pega aquí tu enlace de video de YouTube",
+    "button": "Descargar",
+    "audio_only_label": "Solo audio",
+    "subtitles_label": "Descargar subtítulos",
+    "success": "¡Descarga completada!",
+    "error": "Descarga no exitosa",
+    "error_invalid_url": "URL no válida. ¡Pega un enlace de YouTube válido!",
+    "error_unknown": "Error desconocido, ¡lo siento!",
+    "connection_lost": "Conexión perdida – la descarga continúa. Actualiza la página para ver el resultado.",
+    "not_found": "Descarga no encontrada",
+    "metadata_error": "No se pudieron recuperar los metadatos"
+  },
+  "update": {
+    "button": "Actualizar",
+    "checking": "🔍 Buscando actualizaciones...",
+    "updating_ytdlp": "🔧 Actualizando yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp actualizado",
+    "ytdlp_already_updated": "✓ yt-dlp ya está actualizado",
+    "ytdlp_error": "✗ Error yt-dlp: {error}",
+    "updating_app": "📥 Descargando archivos de GitHub...",
+    "app_downloading": "⬇️ Descargando archivos de la rama 'main'...",
+    "app_extracting": "📦 Extrayendo archivos...",
+    "app_updated": "✓ Aplicación actualizada",
+    "app_error": "✗ Error de actualización de la app: {error}",
+    "success": "✅ ¡Actualización completada con éxito!",
+    "timeout": "Tiempo de espera agotado",
+    "timeout_details": "La operación tardó demasiado",
+    "error": "Ocurrió un error durante la actualización"
+  },
+  "messages": {
+    "starting": "Iniciando...",
+    "resuming": "Reanudando descarga anterior...",
+    "downloading": "⬇️ Descargando...",
+    "video_not_found": "No se pudo encontrar el video. ¡Verifica que el enlace sea correcto!",
+    "copy_details": "📋 Copiar detalles",
+    "details_hint": "Haz clic para ver los detalles",
+    "close": "Cerrar",
+    "copied": "✓ Copiado",
+    "merging": "Fusionando archivos...",
+    "converting": "Convirtiendo...",
+    "downloading_file": "Descargando...",
+    "cleaning_up": "Limpiando...",
+    "finalizing": "Finalizando descarga, limpiando...",
+    "system_error": "Descarga no exitosa debido a un error del sistema",
+    "network_error": "Error de red"
+  },
+  "progress": {
+    "percent": "{percent}% • Velocidad: {speed} • Tamaño: {size}"
+  }
+}

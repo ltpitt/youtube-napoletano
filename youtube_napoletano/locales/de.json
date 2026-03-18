@@ -1,0 +1,53 @@
+{
+  "app_name": "YouTube-Downloader - Neapolitanische Ausgabe",
+  "download": {
+    "placeholder": "Fügen Sie hier Ihren YouTube-Videolink ein",
+    "button": "Herunterladen",
+    "audio_only_label": "Nur Audio",
+    "subtitles_label": "Untertitel herunterladen",
+    "success": "Download abgeschlossen!",
+    "error": "Download fehlgeschlagen",
+    "error_invalid_url": "Ungültige URL. Bitte fügen Sie einen gültigen YouTube-Link ein!",
+    "error_unknown": "Unbekannter Fehler, entschuldigen Sie!",
+    "connection_lost": "Verbindung unterbrochen – der Download wird fortgesetzt. Aktualisieren Sie die Seite, um das Ergebnis zu sehen.",
+    "not_found": "Download nicht gefunden",
+    "metadata_error": "Metadaten konnten nicht abgerufen werden"
+  },
+  "update": {
+    "button": "Aktualisieren",
+    "checking": "🔍 Suche nach Aktualisierungen...",
+    "updating_ytdlp": "🔧 Aktualisiere yt-dlp...",
+    "ytdlp_updated": "✓ yt-dlp aktualisiert",
+    "ytdlp_already_updated": "✓ yt-dlp ist bereits aktuell",
+    "ytdlp_error": "✗ yt-dlp Fehler: {error}",
+    "updating_app": "📥 Dateien von GitHub herunterladen...",
+    "app_downloading": "⬇️ Dateien vom Branch 'main' herunterladen...",
+    "app_extracting": "📦 Dateien extrahieren...",
+    "app_updated": "✓ App aktualisiert",
+    "app_error": "✗ App-Aktualisierungsfehler: {error}",
+    "success": "✅ Aktualisierung erfolgreich abgeschlossen!",
+    "timeout": "Aktualisierungszeit überschritten",
+    "timeout_details": "Der Vorgang hat zu lange gedauert",
+    "error": "Bei der Aktualisierung ist ein Fehler aufgetreten"
+  },
+  "messages": {
+    "starting": "Wird gestartet...",
+    "resuming": "Vorheriger Download wird fortgesetzt...",
+    "downloading": "⬇️ Wird heruntergeladen...",
+    "video_not_found": "Video konnte nicht gefunden werden. Überprüfen Sie, dass der Link korrekt ist!",
+    "copy_details": "📋 Details kopieren",
+    "details_hint": "Klicken Sie, um Details anzuzeigen",
+    "close": "Schließen",
+    "copied": "✓ Kopiert",
+    "merging": "Dateien werden zusammengeführt...",
+    "converting": "Konvertierung läuft...",
+    "downloading_file": "Wird heruntergeladen...",
+    "cleaning_up": "Wird bereinigt...",
+    "finalizing": "Download wird abgeschlossen, wird bereinigt...",
+    "system_error": "Download aufgrund eines Systemfehlers fehlgeschlagen",
+    "network_error": "Netzwerkfehler"
+  },
+  "progress": {
+    "percent": "{percent}% • Geschwindigkeit: {speed} • Größe: {size}"
+  }
+}
