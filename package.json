@@ -1,5 +1,16 @@
 {
   "dependencies": {
     "@playwright/mcp": "^0.0.68"
+  },
+  "devDependencies": {
+    "jest": "^29.6.1",
+    "jest-environment-jsdom": "^30.3.0",
+    "jsdom": "^21.1.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
   }
 }
