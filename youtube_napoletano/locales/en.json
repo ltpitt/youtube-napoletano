@@ -15,7 +15,10 @@
   },
   "settings": {
     "language_label": "Language",
-    "update_section": "Update application"
+    "update_section": "Update application",
+    "cookies_label": "YouTube Cookies (optional)",
+    "cookies_placeholder": "Paste cookies.txt content here (for NAS or headless systems)",
+    "cookies_help": "Used as fallback if browser cookie extraction fails"
   },
   "update": {
     "button": "Update",

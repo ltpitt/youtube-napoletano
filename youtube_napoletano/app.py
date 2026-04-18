@@ -1,8 +1,10 @@
 import json
 import logging
+import os
 import queue
 import re
 import subprocess
+import tempfile
 import threading
 import time
 import uuid
@@ -391,6 +393,7 @@ def download_stream() -> Response:
         )
     audio_only: bool = request.args.get("audio_only") == "true"
     subtitles: bool = request.args.get("subtitles") == "true"
+    cookies_str: str | None = (request.args.get("cookies") or "").strip() or None
     output_dir: str = OUTPUT_DIR
 
     command: list[str] = [
@@ -398,11 +401,25 @@ def download_stream() -> Response:
         YTDLP_PATH,
         "--newline",
         "--no-check-certificate",
-        "--cookies-from-browser",
         "-o",
         f"{output_dir}/%(title)s.%(ext)s",
         video_url,
     ]
+
+    # Add cookies support
+    if cookies_str:
+        # Save cookies to a temporary file
+        try:
+            cookies_fd, cookies_path = tempfile.mkstemp(suffix=".txt", text=True)
+            with os.fdopen(cookies_fd, "w") as f:
+                f.write(cookies_str)
+            command.extend(["--cookies", cookies_path])
+        except Exception:
+            # Fall back to browser cookies if temp file creation fails
+            command.append("--cookies-from-browser")
+    else:
+        command.append("--cookies-from-browser")
+
     if audio_only:
         command.extend(
             [
@@ -592,18 +609,34 @@ def _schedule_batch_eviction(batch_id: str) -> None:
     timer.start()
 
 
-def _build_yt_dlp_command(url: str, audio_only: bool, subtitles: bool) -> list[str]:
+def _build_yt_dlp_command(
+    url: str, audio_only: bool, subtitles: bool, cookies: str | None = None
+) -> list[str]:
     """Build the yt-dlp command list for a single URL."""
     command: list[str] = [
         PYTHON_PATH,
         YTDLP_PATH,
         "--newline",
         "--no-check-certificate",
-        "--cookies-from-browser",
         "-o",
         f"{OUTPUT_DIR}/%(title)s.%(ext)s",
         url,
     ]
+
+    # Add cookies support
+    if cookies:
+        # Save cookies to a temporary file
+        try:
+            cookies_fd, cookies_path = tempfile.mkstemp(suffix=".txt", text=True)
+            with os.fdopen(cookies_fd, "w") as f:
+                f.write(cookies)
+            command.extend(["--cookies", cookies_path])
+        except Exception:
+            # Fall back to browser cookies if temp file creation fails
+            command.append("--cookies-from-browser")
+    else:
+        command.append("--cookies-from-browser")
+
     if audio_only:
         command.extend(
             [
@@ -636,6 +669,7 @@ def _run_batch_thread(batch_id: str) -> None:
     urls = state["urls"]
     audio_only = state["audio_only"]
     subtitles = state["subtitles"]
+    cookies = state.get("cookies")
     total = len(urls)
 
     for idx, url in enumerate(urls):
@@ -649,7 +683,7 @@ def _run_batch_thread(batch_id: str) -> None:
         except queue.Full:
             pass
 
-        command = _build_yt_dlp_command(url, audio_only, subtitles)
+        command = _build_yt_dlp_command(url, audio_only, subtitles, cookies)
         try:
             process = subprocess.Popen(
                 command,
@@ -771,7 +805,7 @@ def _drain_batch_queue(
 def create_batch() -> Any:
     """Create a new batch download.
 
-    Accepts JSON: {urls: [...], audio_only: bool, subtitles: bool}
+    Accepts JSON: {urls: [...], audio_only: bool, subtitles: bool, cookies?: str}
     Returns 202 with {batch_id, total} on success.
     """
     data = request.get_json(silent=True) or {}
@@ -787,6 +821,7 @@ def create_batch() -> Any:
 
     audio_only: bool = data.get("audio_only", False)
     subtitles: bool = data.get("subtitles", False)
+    cookies_str: str | None = (data.get("cookies") or "").strip() or None
 
     batch_id = str(uuid.uuid4())
     task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
@@ -795,6 +830,7 @@ def create_batch() -> Any:
             "urls": valid_urls,
             "audio_only": audio_only,
             "subtitles": subtitles,
+            "cookies": cookies_str,
             "status": "in_progress",
             "current_index": 0,
             "items": [

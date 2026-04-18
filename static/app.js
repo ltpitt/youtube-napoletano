@@ -50,6 +50,18 @@ function storeBatchId(id) { localStorage.setItem(BATCH_ID_KEY, id); }
 function clearBatchId()   { localStorage.removeItem(BATCH_ID_KEY); }
 function getStoredBatchId() { return localStorage.getItem(BATCH_ID_KEY); }
 
+/* ── Cookies localStorage ───────────────────────────────────────────── */
+var COOKIES_KEY = 'yt_napoletano_cookies';
+function storeCookies(cookies) { 
+    if (cookies && cookies.trim()) {
+        localStorage.setItem(COOKIES_KEY, cookies); 
+    } else {
+        localStorage.removeItem(COOKIES_KEY);
+    }
+}
+function getCookies() { return localStorage.getItem(COOKIES_KEY) || ''; }
+function clearCookies() { localStorage.removeItem(COOKIES_KEY); }
+
 /* ── Top-bar loader (slim line at top of card) ───────────────────────── */
 function topbarStart() {
     document.getElementById('topbar').className = 'topbar loading';
@@ -445,10 +457,16 @@ document.getElementById('downloadForm').onsubmit = function(event) {
 
     if (urls.length === 1) {
         // Single URL: use existing streaming endpoint
+        var cookiesParam = '';
+        var cookies = getCookies();
+        if (cookies && cookies.trim()) {
+            cookiesParam = '&cookies=' + encodeURIComponent(cookies);
+        }
         connectToDownloadStream(
             '/download_stream?url=' + encodeURIComponent(urls[0]) +
             '&audio_only=' + (audioOnly ? 'true' : 'false') +
-            '&subtitles=' + (subtitles ? 'true' : 'false')
+            '&subtitles=' + (subtitles ? 'true' : 'false') +
+            cookiesParam
         );
     } else {
         // Multiple URLs: use batch endpoint
@@ -456,10 +474,16 @@ document.getElementById('downloadForm').onsubmit = function(event) {
         topbarStart();
         showProgress('<span class="progress-icon">⬇️</span><span>' + ((_str.messages && _str.messages.starting) || 'Starting...') + '</span>');
 
+        var cookies = getCookies();
+        var batchPayload = { urls: urls, audio_only: audioOnly, subtitles: subtitles };
+        if (cookies && cookies.trim()) {
+            batchPayload.cookies = cookies;
+        }
+
         fetch('/batch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ urls: urls, audio_only: audioOnly, subtitles: subtitles })
+            body: JSON.stringify(batchPayload)
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -688,6 +712,20 @@ document.getElementById('updateLink').onclick = function(e) {
             .catch(function(err) {
                 console.error('Failed to set language:', err);
             });
+    });
+})();
+
+/* ── Cookies textarea ────────────────────────────────────────────── */
+(function() {
+    var cookiesTextarea = document.getElementById('cookiesTextarea');
+    if (!cookiesTextarea) { return; }
+    
+    // Load saved cookies on page load
+    cookiesTextarea.value = getCookies();
+    
+    // Save cookies on input change
+    cookiesTextarea.addEventListener('input', function() {
+        storeCookies(this.value);
     });
 })();
 
