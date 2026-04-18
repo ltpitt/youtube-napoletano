@@ -41,6 +41,15 @@ OUTPUT_DIR = config.OUTPUT_DIR
 BATCH_DELAY_SECONDS = getattr(config, "BATCH_DELAY_SECONDS", 5)
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
 
+# Auto-detect a browser for cookie extraction.
+# yt-dlp supports: brave, chrome, chromium, edge, firefox, opera, safari, vivaldi.
+# We try each in turn and use the first one found; None means no browser available.
+_COOKIE_BROWSER: str | None = None
+for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "vivaldi"):
+    if shutil.which(_browser):
+        _COOKIE_BROWSER = _browser
+        break
+
 # Check if Node.js is available in the system for YouTube JS challenge solving
 _NODE_AVAILABLE = shutil.which("node") is not None
 
@@ -416,11 +425,12 @@ def download_stream() -> Response:
                 f.write(cookies_str)
             command.extend(["--cookies", cookies_path])
         except Exception:
-            # Fall back to browser cookies if temp file creation fails
-            command.extend(["--cookies-from-browser", "firefox"])
-    else:
-        # Extract cookies from Firefox by default
-        command.extend(["--cookies-from-browser", "firefox"])
+            # Fall back to browser cookies if a browser is available
+            if _COOKIE_BROWSER:
+                command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
+    elif _COOKIE_BROWSER:
+        # Extract cookies from detected browser
+        command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use node JS runtime if available for YouTube JS challenge solving
     if _NODE_AVAILABLE:
@@ -499,11 +509,12 @@ def download_video() -> Any:
             PYTHON_PATH,
             YTDLP_PATH,
             "--no-check-certificate",
-            "--cookies-from-browser",
             "-o",
             f"{output_dir}/%(title)s.%(ext)s",
             video_url,
         ]
+        if _COOKIE_BROWSER:
+            command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
         if format_option:
             command.extend(["-f", format_option])
         command.extend(postprocessor_args)
@@ -638,11 +649,12 @@ def _build_yt_dlp_command(
                 f.write(cookies)
             command.extend(["--cookies", cookies_path])
         except Exception:
-            # Fall back to browser cookies if temp file creation fails
-            command.extend(["--cookies-from-browser", "firefox"])
-    else:
-        # Extract cookies from Firefox by default
-        command.extend(["--cookies-from-browser", "firefox"])
+            # Fall back to browser cookies if a browser is available
+            if _COOKIE_BROWSER:
+                command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
+    elif _COOKIE_BROWSER:
+        # Extract cookies from detected browser
+        command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use node JS runtime if available for YouTube JS challenge solving
     if _NODE_AVAILABLE:
