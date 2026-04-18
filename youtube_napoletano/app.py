@@ -418,6 +418,12 @@ def download_stream() -> Response:
         # Extract cookies from Firefox by default
         command.extend(["--cookies-from-browser", "firefox"])
 
+    # Use node JS runtime if available for YouTube JS challenge solving
+    command.extend(["--js-runtimes", "node"])
+    # Enable remote component downloading for EJS solver
+    command.append("--remote-components")
+    command.append("ejs:github")
+
     if audio_only:
         command.extend(
             [
@@ -635,6 +641,12 @@ def _build_yt_dlp_command(
     else:
         # Extract cookies from Firefox by default
         command.extend(["--cookies-from-browser", "firefox"])
+
+    # Use node JS runtime if available for YouTube JS challenge solving
+    command.extend(["--js-runtimes", "node"])
+    # Enable remote component downloading for EJS solver
+    command.append("--remote-components")
+    command.append("ejs:github")
 
     if audio_only:
         command.extend(
