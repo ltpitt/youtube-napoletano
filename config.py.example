@@ -15,3 +15,4 @@ UPDATE_TIMESTAMP_FILE = os.getenv(
     "UPDATE_TIMESTAMP_FILE",
     str(Path(__file__).parent.parent / "yt-dlp-last-update.txt"),
 )
+BATCH_DELAY_SECONDS = int(os.getenv("BATCH_DELAY_SECONDS", "5"))
