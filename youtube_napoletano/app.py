@@ -420,9 +420,6 @@ def download_stream() -> Response:
 
     # Use node JS runtime if available for YouTube JS challenge solving
     command.extend(["--js-runtimes", "node"])
-    # Enable remote component downloading for EJS solver
-    command.append("--remote-components")
-    command.append("ejs:github")
 
     if audio_only:
         command.extend(
@@ -644,9 +641,6 @@ def _build_yt_dlp_command(
 
     # Use node JS runtime if available for YouTube JS challenge solving
     command.extend(["--js-runtimes", "node"])
-    # Enable remote component downloading for EJS solver
-    command.append("--remote-components")
-    command.append("ejs:github")
 
     if audio_only:
         command.extend(
