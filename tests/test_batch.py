@@ -204,7 +204,9 @@ def test_batch_thread_processes_sequentially(monkeypatch):
         def __init__(self, command, **kwargs):
             # Extract URL from command (it's a YouTube URL in the command list)
             for arg in command:
-                if arg.startswith("https://www.youtube.com") or arg.startswith("https://youtu.be"):
+                if arg.startswith("https://www.youtube.com") or arg.startswith(
+                    "https://youtu.be"
+                ):
                     call_order.append(arg)
                     break
             super().__init__(command, **kwargs)

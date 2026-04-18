@@ -562,6 +562,14 @@ document.getElementById('updateLink').onclick = function(e) {
     var updateLink = document.getElementById('updateLink');
     updateLink.classList.add('updating');
     updateLink.disabled = true;
+    
+    // Close settings drawer immediately
+    var backdrop = document.getElementById('settingsBackdrop');
+    var drawer = document.getElementById('settingsDrawer');
+    if (backdrop && drawer) {
+        backdrop.classList.remove('open');
+        drawer.classList.remove('open');
+    }
 
     fetch('/update', { method: 'POST' })
         .then(function(r) {
