@@ -1,4 +1,4 @@
 flask==3.0.3
-yt-dlp>=2026.3.17
+yt-dlp[default]>=2026.3.17
 pytest==8.0.2
 ruff==0.15.0

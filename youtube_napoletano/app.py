@@ -51,9 +51,14 @@ for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "viv
         break
 
 # Auto-detect a JS runtime for YouTube challenge solving.
-# yt-dlp supports: deno (preferred), node. None means no runtime available.
+# yt-dlp supports: deno, node, bun, quickjs (qjs binary).
 _JS_RUNTIME: str | None = None
-for _rt_name, _rt_bin in (("deno", "deno"), ("node", "node")):
+for _rt_name, _rt_bin in (
+    ("deno", "deno"),
+    ("node", "node"),
+    ("bun", "bun"),
+    ("quickjs", "qjs"),
+):
     if shutil.which(_rt_bin):
         _JS_RUNTIME = _rt_name
         break
@@ -437,9 +442,10 @@ def download_stream() -> Response:
         # Extract cookies from detected browser
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
-    # Use detected JS runtime for YouTube challenge solving
+    # Use detected JS runtime and EJS scripts for YouTube challenge solving
     if _JS_RUNTIME:
         command.extend(["--js-runtimes", _JS_RUNTIME])
+        command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
         command.extend(
@@ -661,9 +667,10 @@ def _build_yt_dlp_command(
         # Extract cookies from detected browser
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
-    # Use detected JS runtime for YouTube challenge solving
+    # Use detected JS runtime and EJS scripts for YouTube challenge solving
     if _JS_RUNTIME:
         command.extend(["--js-runtimes", _JS_RUNTIME])
+        command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
         command.extend(
