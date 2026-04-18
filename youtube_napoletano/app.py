@@ -401,9 +401,6 @@ def download_stream() -> Response:
         YTDLP_PATH,
         "--newline",
         "--no-check-certificate",
-        "-o",
-        f"{output_dir}/%(title)s.%(ext)s",
-        video_url,
     ]
 
     # Add cookies support
@@ -434,6 +431,9 @@ def download_stream() -> Response:
         )
     if subtitles:
         command.extend(["--write-sub", "--write-auto-sub"])
+
+    # Add output format and URL last
+    command.extend(["-o", f"{output_dir}/%(title)s.%(ext)s", video_url])
 
     new_id = str(uuid.uuid4())
     task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
@@ -618,9 +618,6 @@ def _build_yt_dlp_command(
         YTDLP_PATH,
         "--newline",
         "--no-check-certificate",
-        "-o",
-        f"{OUTPUT_DIR}/%(title)s.%(ext)s",
-        url,
     ]
 
     # Add cookies support
@@ -651,6 +648,9 @@ def _build_yt_dlp_command(
         )
     if subtitles:
         command.extend(["--write-sub", "--write-auto-sub"])
+
+    # Add output format and URL last
+    command.extend(["-o", f"{OUTPUT_DIR}/%(title)s.%(ext)s", url])
     return command
 
 
