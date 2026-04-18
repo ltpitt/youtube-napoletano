@@ -50,8 +50,13 @@ for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "viv
         _COOKIE_BROWSER = _browser
         break
 
-# Check if Node.js is available in the system for YouTube JS challenge solving
-_NODE_AVAILABLE = shutil.which("node") is not None
+# Auto-detect a JS runtime for YouTube challenge solving.
+# yt-dlp supports: deno (preferred), node. None means no runtime available.
+_JS_RUNTIME: str | None = None
+for _rt_name, _rt_bin in (("deno", "deno"), ("node", "node")):
+    if shutil.which(_rt_bin):
+        _JS_RUNTIME = _rt_name
+        break
 
 # Active download states: download_id -> state dict.
 # Kept in memory for the lifetime of the server process so that the GUI can
@@ -432,9 +437,9 @@ def download_stream() -> Response:
         # Extract cookies from detected browser
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
-    # Use node JS runtime if available for YouTube JS challenge solving
-    if _NODE_AVAILABLE:
-        command.extend(["--js-runtimes", "node"])
+    # Use detected JS runtime for YouTube challenge solving
+    if _JS_RUNTIME:
+        command.extend(["--js-runtimes", _JS_RUNTIME])
 
     if audio_only:
         command.extend(
@@ -656,9 +661,9 @@ def _build_yt_dlp_command(
         # Extract cookies from detected browser
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
-    # Use node JS runtime if available for YouTube JS challenge solving
-    if _NODE_AVAILABLE:
-        command.extend(["--js-runtimes", "node"])
+    # Use detected JS runtime for YouTube challenge solving
+    if _JS_RUNTIME:
+        command.extend(["--js-runtimes", _JS_RUNTIME])
 
     if audio_only:
         command.extend(
