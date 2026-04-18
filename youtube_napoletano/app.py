@@ -35,7 +35,7 @@ UPDATE_TIMESTAMP_FILE = Path(config.UPDATE_TIMESTAMP_FILE)
 YTDLP_PATH = config.YTDLP_PATH
 PYTHON_PATH = config.PYTHON_PATH
 OUTPUT_DIR = config.OUTPUT_DIR
-BATCH_DELAY_SECONDS = config.BATCH_DELAY_SECONDS
+BATCH_DELAY_SECONDS = getattr(config, "BATCH_DELAY_SECONDS", 5)
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
 
 # Active download states: download_id -> state dict.
