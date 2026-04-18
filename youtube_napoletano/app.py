@@ -3,6 +3,7 @@ import logging
 import os
 import queue
 import re
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -39,6 +40,9 @@ PYTHON_PATH = config.PYTHON_PATH
 OUTPUT_DIR = config.OUTPUT_DIR
 BATCH_DELAY_SECONDS = getattr(config, "BATCH_DELAY_SECONDS", 5)
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
+
+# Check if Node.js is available in the system for YouTube JS challenge solving
+_NODE_AVAILABLE = shutil.which("node") is not None
 
 # Active download states: download_id -> state dict.
 # Kept in memory for the lifetime of the server process so that the GUI can
@@ -419,7 +423,8 @@ def download_stream() -> Response:
         command.extend(["--cookies-from-browser", "firefox"])
 
     # Use node JS runtime if available for YouTube JS challenge solving
-    command.extend(["--js-runtimes", "node"])
+    if _NODE_AVAILABLE:
+        command.extend(["--js-runtimes", "node"])
 
     if audio_only:
         command.extend(
@@ -640,7 +645,8 @@ def _build_yt_dlp_command(
         command.extend(["--cookies-from-browser", "firefox"])
 
     # Use node JS runtime if available for YouTube JS challenge solving
-    command.extend(["--js-runtimes", "node"])
+    if _NODE_AVAILABLE:
+        command.extend(["--js-runtimes", "node"])
 
     if audio_only:
         command.extend(
