@@ -413,9 +413,11 @@ def download_stream() -> Response:
             command.extend(["--cookies", cookies_path])
         except Exception:
             # Fall back to browser cookies if temp file creation fails
-            command.append("--cookies-from-browser")
+            # Try common browsers in order
+            command.extend(["--cookies-from-browser", "firefox,chrome,chromium,edge"])
     else:
-        command.append("--cookies-from-browser")
+        # Try common browsers in order (firefox first since it's common on Linux)
+        command.extend(["--cookies-from-browser", "firefox,chrome,chromium,edge"])
 
     if audio_only:
         command.extend(
@@ -630,9 +632,11 @@ def _build_yt_dlp_command(
             command.extend(["--cookies", cookies_path])
         except Exception:
             # Fall back to browser cookies if temp file creation fails
-            command.append("--cookies-from-browser")
+            # Try common browsers in order
+            command.extend(["--cookies-from-browser", "firefox,chrome,chromium,edge"])
     else:
-        command.append("--cookies-from-browser")
+        # Try common browsers in order (firefox first since it's common on Linux)
+        command.extend(["--cookies-from-browser", "firefox,chrome,chromium,edge"])
 
     if audio_only:
         command.extend(
