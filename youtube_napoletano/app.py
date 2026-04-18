@@ -413,10 +413,10 @@ def download_stream() -> Response:
             command.extend(["--cookies", cookies_path])
         except Exception:
             # Fall back to browser cookies if temp file creation fails
-            command.append("--cookies-from-browser")
+            command.extend(["--cookies-from-browser", "firefox"])
     else:
-        # Auto-detect browser cookies (yt-dlp will search in available browsers)
-        command.append("--cookies-from-browser")
+        # Extract cookies from Firefox by default
+        command.extend(["--cookies-from-browser", "firefox"])
 
     if audio_only:
         command.extend(
@@ -631,10 +631,10 @@ def _build_yt_dlp_command(
             command.extend(["--cookies", cookies_path])
         except Exception:
             # Fall back to browser cookies if temp file creation fails
-            command.append("--cookies-from-browser")
+            command.extend(["--cookies-from-browser", "firefox"])
     else:
-        # Auto-detect browser cookies (yt-dlp will search in available browsers)
-        command.append("--cookies-from-browser")
+        # Extract cookies from Firefox by default
+        command.extend(["--cookies-from-browser", "firefox"])
 
     if audio_only:
         command.extend(
