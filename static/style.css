@@ -354,3 +354,11 @@ body.light-mode .language-selector option{
     width:100%;
   }
 }
+/* Multi-URL rows */
+#urlList{display:flex;flex-direction:column;gap:8px}
+.url-row{display:flex;gap:8px;align-items:center}
+.url-input{flex:1;padding:14px;border-radius:8px;border:none;font-size:1rem;box-sizing:border-box;margin-top:0}
+.remove-url-btn{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:6px 10px;border-radius:6px;transition:all 0.2s;flex-shrink:0;line-height:1}
+.remove-url-btn:hover{color:#ff7a6d;background:rgba(244,67,54,0.12)}
+.add-url-btn{background:none;border:1px dashed var(--muted);color:var(--muted);padding:10px;border-radius:8px;font-size:0.9rem;cursor:pointer;transition:all 0.2s;width:100%;margin-top:4px}
+.add-url-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,130,202,0.06)}

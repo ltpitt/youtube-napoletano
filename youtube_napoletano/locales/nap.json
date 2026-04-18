@@ -54,5 +54,15 @@
   },
   "progress": {
     "percent": "{percent}% • Velocità: {speed} • Dimensione: {size}"
+  },
+  "batch": {
+    "add_url": "Aggiugne n'ata URL",
+    "remove_url": "Leva",
+    "no_valid_urls": "Nisciuna URL YouTube valida!",
+    "downloading_item": "Sto scarricanno {current} 'e {total}...",
+    "item_complete": "Video {current} 'e {total} scarricato!",
+    "item_error": "Errore cu 'o video {current} 'e {total}",
+    "batch_complete": "Tutti 'e {total} video so' scarricati!",
+    "waiting_next": "Aspettanno primma d''o prossimo scarricamento..."
   }
 }

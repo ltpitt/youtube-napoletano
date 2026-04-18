@@ -73,7 +73,7 @@ def test_html_has_required_elements():
 
     required_ids = [
         "downloadForm",
-        "urlInput",
+        "urlList",
         "progressContainer",
         "messageBox",
         "topbar",

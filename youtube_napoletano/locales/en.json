@@ -54,5 +54,15 @@
   },
   "progress": {
     "percent": "{percent}% • Speed: {speed} • Size: {size}"
+  },
+  "batch": {
+    "add_url": "Add another URL",
+    "remove_url": "Remove",
+    "no_valid_urls": "No valid YouTube URLs!",
+    "downloading_item": "Downloading {current} of {total}...",
+    "item_complete": "Video {current} of {total} complete!",
+    "item_error": "Error with video {current} of {total}",
+    "batch_complete": "All {total} videos downloaded!",
+    "waiting_next": "Waiting before next download..."
   }
 }

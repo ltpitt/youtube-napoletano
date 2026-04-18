@@ -1,4 +1,5 @@
 var DOWNLOAD_ID_KEY = 'yt_napoletano_download_id';
+var BATCH_ID_KEY = 'yt_napoletano_batch_id';
 var _str = {};
 
 /* ── i18n translations ───────────────────────────────────────────────── */
@@ -44,6 +45,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function storeDownloadId(id) { localStorage.setItem(DOWNLOAD_ID_KEY, id); }
 function clearDownloadId()   { localStorage.removeItem(DOWNLOAD_ID_KEY); }
 function getStoredDownloadId() { return localStorage.getItem(DOWNLOAD_ID_KEY); }
+
+function storeBatchId(id) { localStorage.setItem(BATCH_ID_KEY, id); }
+function clearBatchId()   { localStorage.removeItem(BATCH_ID_KEY); }
+function getStoredBatchId() { return localStorage.getItem(BATCH_ID_KEY); }
 
 /* ── Top-bar loader (slim line at top of card) ───────────────────────── */
 function topbarStart() {
@@ -291,25 +296,215 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
     };
 }
 
+/* ── Add/Remove URL rows ─────────────────────────────────────────────── */
+(function() {
+    var addBtn = document.getElementById('addUrlBtn');
+    if (!addBtn) { return; }
+
+    addBtn.addEventListener('click', function() {
+        var urlList = document.getElementById('urlList');
+        var row = document.createElement('div');
+        row.className = 'url-row';
+        var placeholder = (_str.download && _str.download.placeholder) || "Miette ccà 'o link d''o video 'e YouTube";
+        var removeLabel = (_str.batch && _str.batch.remove_url) || 'Remove';
+        row.innerHTML = '<input type="text" name="url" class="url-input" placeholder="' + escapeHtml(placeholder) + '" data-i18n-placeholder="download.placeholder">' +
+                        '<button type="button" class="remove-url-btn" aria-label="' + escapeHtml(removeLabel) + '" title="' + escapeHtml(removeLabel) + '">✕</button>';
+        urlList.appendChild(row);
+        row.querySelector('.url-input').focus();
+        row.querySelector('.remove-url-btn').addEventListener('click', function() {
+            row.remove();
+        });
+    });
+})();
+
+/* ── Collect URLs from form ──────────────────────────────────────────── */
+function collectUrls() {
+    var inputs = document.querySelectorAll('#urlList .url-input');
+    var urls = [];
+    for (var i = 0; i < inputs.length; i++) {
+        var val = inputs[i].value && inputs[i].value.trim();
+        if (val) { urls.push(val); }
+    }
+    return urls;
+}
+
+/* ── Batch SSE stream ────────────────────────────────────────────────── */
+function connectToBatchStream(batchId, total) {
+    var messageBox   = document.getElementById('messageBox');
+    var progressBar  = document.getElementById('progressBar');
+    var progressInfo = document.getElementById('progressInfo');
+
+    messageBox.innerHTML = '';
+    topbarStart();
+    showProgress('<span class="progress-icon">⬇️</span><span>' + ((_str.batch && _str.batch.downloading_item) || 'Downloading {current} of {total}...').replace('{current}', '1').replace('{total}', total) + '</span>');
+
+    var eventSource = new EventSource('/batch/stream/' + batchId);
+    var batchFinished = false;
+
+    eventSource.addEventListener('batch_snapshot', function(e) {
+        topbarDone();
+        var data = JSON.parse(e.data);
+        // Count completed items
+        var completed = 0;
+        for (var i = 0; i < data.items.length; i++) {
+            if (data.items[i].status === 'complete' || data.items[i].status === 'error') { completed++; }
+        }
+        if (completed > 0 && completed < data.items.length) {
+            var fmt = (_str.batch && _str.batch.downloading_item) || 'Downloading {current} of {total}...';
+            progressInfo.textContent = fmt.replace('{current}', (completed + 1).toString()).replace('{total}', data.items.length.toString());
+        }
+    });
+
+    eventSource.addEventListener('batch_item_start', function(e) {
+        var data = JSON.parse(e.data);
+        var current = data.index + 1;
+        var fmt = (_str.batch && _str.batch.downloading_item) || 'Downloading {current} of {total}...';
+        var ph = document.querySelector('.progress-header');
+        if (ph) {
+            ph.innerHTML = '<span class="progress-icon">⬇️</span><span>' + fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString()) + '</span>';
+        }
+        progressBar.style.width = '0%';
+        progressInfo.textContent = fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString());
+    });
+
+    eventSource.addEventListener('batch_item_progress', function(e) {
+        var data = JSON.parse(e.data);
+        var p = data.progress;
+        progressBar.style.width = p.percent + '%';
+        var fmt = (_str.progress && _str.progress.percent) || '{percent}% • {speed} • {size}';
+        progressInfo.textContent = fmt.replace('{percent}', p.percent).replace('{speed}', p.speed).replace('{size}', p.size);
+    });
+
+    eventSource.addEventListener('batch_item_complete', function(e) {
+        var data = JSON.parse(e.data);
+        var current = data.index + 1;
+        var fmt = (_str.batch && _str.batch.item_complete) || 'Video {current} of {total} complete!';
+        showMessage(fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString()), 'success');
+    });
+
+    eventSource.addEventListener('batch_item_error', function(e) {
+        var data = JSON.parse(e.data);
+        var current = data.index + 1;
+        var fmt = (_str.batch && _str.batch.item_error) || 'Error with video {current} of {total}';
+        showMessage(fmt.replace('{current}', current.toString()).replace('{total}', (total || '?').toString()), 'error', data.error || '');
+    });
+
+    eventSource.addEventListener('batch_waiting', function(e) {
+        var data = JSON.parse(e.data);
+        progressInfo.textContent = (_str.batch && _str.batch.waiting_next) || 'Waiting before next download...';
+        progressBar.className = 'progress-bar indeterminate';
+    });
+
+    eventSource.addEventListener('batch_complete', function(e) {
+        batchFinished = true;
+        eventSource.close();
+        hideProgress();
+        clearBatchId();
+        var data = JSON.parse(e.data);
+        var fmt = (_str.batch && _str.batch.batch_complete) || 'All {total} videos downloaded!';
+        showMessage(fmt.replace('{total}', data.total.toString()), 'success');
+    });
+
+    eventSource.addEventListener('error_event', function(e) {
+        batchFinished = true;
+        eventSource.close();
+        hideProgress();
+        clearBatchId();
+        var data = JSON.parse(e.data);
+        showMessage(data.error || 'Error', 'error');
+    });
+
+    eventSource.onerror = function() {
+        if (batchFinished) { return; }
+        eventSource.close();
+        hideProgress();
+        showMessage((_str.download && _str.download.connection_lost) || 'Connection lost – downloads continue in background.', 'error');
+    };
+}
+
 /* ── Form submit ─────────────────────────────────────────────────────── */
 document.getElementById('downloadForm').onsubmit = function(event) {
-    event.preventDefault();    var urlInput = document.getElementById('urlInput');
-    if (!urlInput.value.trim()) {
-        var errMsg = (_str.download && _str.download.error_invalid_url) || 'Please enter a valid URL';
-        urlInput.setCustomValidity(errMsg);
-        urlInput.reportValidity();
+    event.preventDefault();
+    var urls = collectUrls();
+    if (urls.length === 0) {
+        var firstInput = document.querySelector('#urlList .url-input');
+        if (firstInput) {
+            var errMsg = (_str.download && _str.download.error_invalid_url) || 'Please enter a valid URL';
+            firstInput.setCustomValidity(errMsg);
+            firstInput.reportValidity();
+        }
         return;
     }
-    urlInput.setCustomValidity('');    var fd = new FormData(this);
-    connectToDownloadStream(
-        '/download_stream?url=' + encodeURIComponent(fd.get('url')) +
-        '&audio_only=' + (fd.get('audio_only') ? 'true' : 'false') +
-        '&subtitles=' + (fd.get('subtitles') ? 'true' : 'false')
-    );
+    // Clear validation state
+    var allInputs = document.querySelectorAll('#urlList .url-input');
+    for (var i = 0; i < allInputs.length; i++) { allInputs[i].setCustomValidity(''); }
+
+    var fd = new FormData(this);
+    var audioOnly = fd.get('audio_only') ? true : false;
+    var subtitles = fd.get('subtitles') ? true : false;
+
+    if (urls.length === 1) {
+        // Single URL: use existing streaming endpoint
+        connectToDownloadStream(
+            '/download_stream?url=' + encodeURIComponent(urls[0]) +
+            '&audio_only=' + (audioOnly ? 'true' : 'false') +
+            '&subtitles=' + (subtitles ? 'true' : 'false')
+        );
+    } else {
+        // Multiple URLs: use batch endpoint
+        document.getElementById('messageBox').innerHTML = '';
+        topbarStart();
+        showProgress('<span class="progress-icon">⬇️</span><span>' + ((_str.messages && _str.messages.starting) || 'Starting...') + '</span>');
+
+        fetch('/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: urls, audio_only: audioOnly, subtitles: subtitles })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                topbarDone();
+                hideProgress();
+                showMessage(data.error, 'error');
+                return;
+            }
+            storeBatchId(data.batch_id);
+            topbarDone();
+            connectToBatchStream(data.batch_id, data.total);
+        })
+        .catch(function(err) {
+            topbarDone();
+            hideProgress();
+            showMessage((_str.messages && _str.messages.network_error) || 'Network error', 'error');
+        });
+    }
 };
 
 /* ── Resume on page load ─────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', function() {
+    // Check for a batch in progress first
+    var batchId = getStoredBatchId();
+    if (batchId) {
+        topbarStart();
+        fetch('/batch/status/' + batchId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                topbarDone();
+                if (data.error) { clearBatchId(); return; }
+                if (data.status === 'complete') {
+                    clearBatchId();
+                    var fmt = (_str.batch && _str.batch.batch_complete) || 'All {total} videos downloaded!';
+                    showMessage(fmt.replace('{total}', data.items.length.toString()), 'success');
+                } else {
+                    connectToBatchStream(batchId, data.items.length);
+                }
+            })
+            .catch(function() { topbarDone(); clearBatchId(); });
+        return;
+    }
+
+    // Check for a single download in progress
     var id = getStoredDownloadId();
     if (!id) { return; }
     topbarStart();
@@ -520,12 +715,12 @@ document.getElementById('updateLink').onclick = function(e) {
 
 /* ── Metadata fetch on paste / type ─────────────────────────────────── */
 (function() {
-    var input = document.getElementById('urlInput');
-    if (!input) { return; }
+    var urlList = document.getElementById('urlList');
+    if (!urlList) { return; }
     var timeout = null;
 
-    function tryFetch() {
-        var val = input.value && input.value.trim();
+    function tryFetch(input) {
+        var val = input && input.value && input.value.trim();
         if (!val) { renderMetadata(null); return; }
         fetch('/metadata?url=' + encodeURIComponent(val))
             .then(function(r) { return r.json(); })
@@ -543,14 +738,20 @@ document.getElementById('updateLink').onclick = function(e) {
             });
     }
 
-    input.addEventListener('paste', function() {
-        topbarStart();
-        setTimeout(tryFetch, 50);
+    // Use event delegation on the url list container
+    urlList.addEventListener('paste', function(e) {
+        if (e.target.classList.contains('url-input')) {
+            topbarStart();
+            var target = e.target;
+            setTimeout(function() { tryFetch(target); }, 50);
+        }
     });
-    input.addEventListener('input', function() {
-        input.setCustomValidity('');
+    urlList.addEventListener('input', function(e) {
+        if (!e.target.classList.contains('url-input')) { return; }
+        e.target.setCustomValidity('');
         if (timeout) { clearTimeout(timeout); }
-        if (!input.value || !input.value.trim()) { renderMetadata(null); return; }
-        timeout = setTimeout(function() { topbarStart(); tryFetch(); }, 600);
+        if (!e.target.value || !e.target.value.trim()) { renderMetadata(null); return; }
+        var target = e.target;
+        timeout = setTimeout(function() { topbarStart(); tryFetch(target); }, 600);
     });
 })();

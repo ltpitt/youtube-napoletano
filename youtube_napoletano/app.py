@@ -4,6 +4,7 @@ import queue
 import re
 import subprocess
 import threading
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Generator
@@ -34,6 +35,7 @@ UPDATE_TIMESTAMP_FILE = Path(config.UPDATE_TIMESTAMP_FILE)
 YTDLP_PATH = config.YTDLP_PATH
 PYTHON_PATH = config.PYTHON_PATH
 OUTPUT_DIR = config.OUTPUT_DIR
+BATCH_DELAY_SECONDS = config.BATCH_DELAY_SECONDS
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
 
 # Active download states: download_id -> state dict.
@@ -41,6 +43,11 @@ YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$"
 # reconnect after a browser close / app switch and see the current status.
 _download_states: dict[str, dict] = {}
 _downloads_lock = threading.Lock()
+
+# Active batch states: batch_id -> state dict.
+# Each batch processes URLs sequentially with a delay between downloads.
+_batch_states: dict[str, dict] = {}
+_batches_lock = threading.Lock()
 
 # Completed download states are evicted from memory after this many seconds.
 _STATE_TTL_SECONDS = 3600
@@ -563,6 +570,298 @@ def update() -> Any:
                 "details": str(e),
             }
         ), 500
+
+
+# ---------------------------------------------------------------------------
+# Batch (multi-URL) download
+# ---------------------------------------------------------------------------
+
+
+def _schedule_batch_eviction(batch_id: str) -> None:
+    """Remove a finished batch from ``_batch_states`` after the TTL."""
+
+    def _evict() -> None:
+        with _batches_lock:
+            _batch_states.pop(batch_id, None)
+            app.logger.debug(f"Evicted batch state {batch_id}")
+
+    timer = threading.Timer(_STATE_TTL_SECONDS, _evict)
+    timer.daemon = True
+    timer.start()
+
+
+def _build_yt_dlp_command(url: str, audio_only: bool, subtitles: bool) -> list[str]:
+    """Build the yt-dlp command list for a single URL."""
+    command: list[str] = [
+        PYTHON_PATH,
+        YTDLP_PATH,
+        "--newline",
+        "--no-check-certificate",
+        "-o",
+        f"{OUTPUT_DIR}/%(title)s.%(ext)s",
+        url,
+    ]
+    if audio_only:
+        command.extend(
+            [
+                "-f",
+                "bestaudio/best",
+                "-x",
+                "--audio-format",
+                "mp3",
+                "--audio-quality",
+                "0",
+            ]
+        )
+    if subtitles:
+        command.extend(["--write-sub", "--write-auto-sub"])
+    return command
+
+
+def _run_batch_thread(batch_id: str) -> None:
+    """Process a batch of URLs sequentially with a delay between each one.
+
+    Each URL is downloaded via yt-dlp in a subprocess.  Progress events are
+    posted to the batch queue so an SSE client can display live updates.
+    The batch continues even if individual downloads fail.
+    """
+    with _batches_lock:
+        state = _batch_states.get(batch_id)
+    if state is None:
+        return
+    task_queue: queue.Queue = state["queue"]
+    urls = state["urls"]
+    audio_only = state["audio_only"]
+    subtitles = state["subtitles"]
+    total = len(urls)
+
+    for idx, url in enumerate(urls):
+        with _batches_lock:
+            state["current_index"] = idx
+            state["items"][idx]["status"] = "downloading"
+        try:
+            task_queue.put_nowait(
+                ("batch_item_start", {"index": idx, "url": url, "total": total})
+            )
+        except queue.Full:
+            pass
+
+        command = _build_yt_dlp_command(url, audio_only, subtitles)
+        try:
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=1,
+            )
+            for line in iter(process.stdout.readline, ""):
+                line = line.strip()
+                progress = parse_progress(line)
+                if progress:
+                    try:
+                        task_queue.put_nowait(
+                            (
+                                "batch_item_progress",
+                                {"index": idx, "progress": progress},
+                            )
+                        )
+                    except queue.Full:
+                        pass
+
+            process.wait()
+            stderr = process.stderr.read() if process.stderr else ""
+
+            if process.returncode == 0:
+                with _batches_lock:
+                    state["items"][idx]["status"] = "complete"
+                try:
+                    task_queue.put_nowait(
+                        (
+                            "batch_item_complete",
+                            {"index": idx, "url": url, "total": total},
+                        )
+                    )
+                except queue.Full:
+                    pass
+            else:
+                err_details = stderr.strip()[-500:] if stderr else ""
+                with _batches_lock:
+                    state["items"][idx]["status"] = "error"
+                    state["items"][idx]["error"] = err_details
+                try:
+                    task_queue.put_nowait(
+                        (
+                            "batch_item_error",
+                            {"index": idx, "url": url, "error": err_details},
+                        )
+                    )
+                except queue.Full:
+                    pass
+        except Exception as e:
+            app.logger.error(f"Batch item {idx} error", exc_info=True)
+            with _batches_lock:
+                state["items"][idx]["status"] = "error"
+                state["items"][idx]["error"] = str(e)
+            try:
+                task_queue.put_nowait(
+                    ("batch_item_error", {"index": idx, "url": url, "error": str(e)})
+                )
+            except queue.Full:
+                pass
+
+        # Throttle: wait before starting the next download
+        if idx < total - 1:
+            try:
+                task_queue.put_nowait(
+                    ("batch_waiting", {"seconds": BATCH_DELAY_SECONDS})
+                )
+            except queue.Full:
+                pass
+            time.sleep(BATCH_DELAY_SECONDS)
+
+    with _batches_lock:
+        state["status"] = "complete"
+    try:
+        task_queue.put_nowait(("batch_complete", {"total": total}))
+    except queue.Full:
+        pass
+    try:
+        task_queue.put_nowait(("done", None))
+    except queue.Full:
+        pass
+    _schedule_batch_eviction(batch_id)
+
+
+def _drain_batch_queue(
+    batch_id: str,
+    task_queue: "queue.Queue[tuple[str, Any]]",
+) -> Generator[str, None, None]:
+    """Read events from a batch queue and yield SSE strings until done."""
+    try:
+        while True:
+            try:
+                event_type, payload = task_queue.get(timeout=10)
+            except queue.Empty:
+                with _batches_lock:
+                    state = _batch_states.get(batch_id)
+                if state is not None and state.get("status") == "complete":
+                    total = len(state.get("urls", []))
+                    yield f"event: batch_complete\ndata: {json.dumps({'total': total})}\n\n"
+                    break
+                yield ": keepalive\n\n"
+                continue
+            if event_type == "done":
+                break
+            elif event_type == "batch_complete":
+                yield f"event: batch_complete\ndata: {json.dumps(payload)}\n\n"
+                break
+            else:
+                yield f"event: {event_type}\ndata: {json.dumps(payload)}\n\n"
+    except GeneratorExit:
+        app.logger.info(
+            f"Client disconnected from batch {batch_id}, batch continues in background"
+        )
+
+
+@app.route("/batch", methods=["POST"])
+def create_batch() -> Any:
+    """Create a new batch download.
+
+    Accepts JSON: {urls: [...], audio_only: bool, subtitles: bool}
+    Returns 202 with {batch_id, total} on success.
+    """
+    data = request.get_json(silent=True) or {}
+    raw_urls: list[str] = data.get("urls", [])
+    if not raw_urls:
+        return jsonify({"error": i18n.get("batch.no_valid_urls")}), 400
+
+    valid_urls = [
+        u.strip() for u in raw_urls if u.strip() and YOUTUBE_URL_RE.match(u.strip())
+    ]
+    if not valid_urls:
+        return jsonify({"error": i18n.get("batch.no_valid_urls")}), 400
+
+    audio_only: bool = data.get("audio_only", False)
+    subtitles: bool = data.get("subtitles", False)
+
+    batch_id = str(uuid.uuid4())
+    task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
+    with _batches_lock:
+        _batch_states[batch_id] = {
+            "urls": valid_urls,
+            "audio_only": audio_only,
+            "subtitles": subtitles,
+            "status": "in_progress",
+            "current_index": 0,
+            "items": [
+                {"url": u, "status": "pending", "error": None} for u in valid_urls
+            ],
+            "queue": task_queue,
+        }
+
+    thread = threading.Thread(
+        target=_run_batch_thread,
+        args=(batch_id,),
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"batch_id": batch_id, "total": len(valid_urls)}), 202
+
+
+@app.route("/batch/status/<batch_id>")
+def batch_status(batch_id: str) -> Any:
+    """Return the current status of a batch download as JSON."""
+    with _batches_lock:
+        state = _batch_states.get(batch_id)
+        if state is None:
+            return jsonify({"error": i18n.get("download.not_found")}), 404
+        snapshot = {
+            "status": state["status"],
+            "current_index": state["current_index"],
+            "items": [
+                {"url": item["url"], "status": item["status"], "error": item["error"]}
+                for item in state["items"]
+            ],
+        }
+    return jsonify(snapshot)
+
+
+@app.route("/batch/stream/<batch_id>")
+def batch_stream(batch_id: str) -> Response:
+    """Stream batch download progress using Server-Sent Events.
+
+    Reconnect-friendly: if the batch already finished the final event is
+    emitted immediately.
+    """
+    with _batches_lock:
+        state = _batch_states.get(batch_id)
+        if state is None:
+            err = json.dumps({"error": i18n.get("download.not_found")})
+            return Response(
+                f"event: error_event\ndata: {err}\n\n",
+                mimetype="text/event-stream",
+            )
+        snap = {
+            "status": state["status"],
+            "items": [
+                {"url": item["url"], "status": item["status"], "error": item["error"]}
+                for item in state["items"]
+            ],
+            "queue": state["queue"],
+        }
+
+    def generate_batch() -> Generator[str, None, None]:
+        # Emit a snapshot for reconnecting clients
+        yield f"event: batch_snapshot\ndata: {json.dumps({'items': snap['items']})}\n\n"
+        if snap["status"] == "complete":
+            total = len(snap["items"])
+            yield f"event: batch_complete\ndata: {json.dumps({'total': total})}\n\n"
+            return
+        yield from _drain_batch_queue(batch_id, snap["queue"])
+
+    return Response(stream_with_context(generate_batch()), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":

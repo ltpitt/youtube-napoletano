@@ -28,7 +28,12 @@
             </div>
         </div>
         <form id="downloadForm" novalidate>
-            <input id="urlInput" type="text" name="url" placeholder="Miette ccà 'o link d''o video 'e YouTube" data-i18n-placeholder="download.placeholder" required>
+            <div id="urlList">
+                <div class="url-row">
+                    <input type="text" name="url" class="url-input" placeholder="Miette ccà 'o link d''o video 'e YouTube" data-i18n-placeholder="download.placeholder" required>
+                </div>
+            </div>
+            <button type="button" id="addUrlBtn" class="add-url-btn" data-i18n="batch.add_url">+ Aggiugne n'ata URL</button>
             <div id="metaCard" class="meta-card" style="display:none">
                 <div id="videoPlayer" class="video-player">
                     <iframe id="videoFrame" class="video-frame" src="" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
