@@ -3,7 +3,7 @@
     "@playwright/mcp": "^0.0.68"
   },
   "devDependencies": {
-    "jest": "^29.6.1",
+    "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "jsdom": "^29.0.2"
   },
