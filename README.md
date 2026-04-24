@@ -65,7 +65,7 @@ make run
 
 ```sh
 # Create virtual environment if not already present
-python3.12 -m venv .venv
+python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -r requirements.txt
 
