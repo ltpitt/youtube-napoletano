@@ -48,7 +48,7 @@ _Please use this script only for didactic and personal purposes, and always resp
 ```sh
 git clone https://github.com/ltpitt/youtube-napoletano.git
 cd youtube-napoletano
-python3.12 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -65,7 +65,7 @@ make run
 
 ```sh
 # Create virtual environment if not already present
-python3 -m venv .venv
+python -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -r requirements.txt
 
