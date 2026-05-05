@@ -33,7 +33,20 @@ document.addEventListener('DOMContentLoaded', function() {
         updateLink.classList.remove('updating');
         updateLink.disabled = false;
     }
-    
+
+    // Wire up the progress-log expand/collapse toggle
+    var logToggle = document.getElementById('progressLogToggle');
+    if (logToggle) {
+        logToggle.addEventListener('click', function() {
+            var log = document.getElementById('progressLog');
+            if (!log) { return; }
+            log.classList.toggle('expanded');
+            logToggle.textContent = logToggle.textContent.replace(/^[▶▼]/, function(m) {
+                return m === '▶' ? '▼' : '▶';
+            });
+        });
+    }
+
     var savedLang = localStorage.getItem('language') || 'nap';
     fetch('/api/i18n/set-language', {
         method: 'POST',
@@ -216,6 +229,7 @@ function showProgress(headerHtml) {
     pb.style.width = '0%';
     ph.innerHTML = headerHtml;
     document.getElementById('progressInfo').textContent = '';
+    clearProgressLog();
 }
 function showProgressIndeterminate(headerHtml) {
     var c  = document.getElementById('progressContainer');
@@ -225,10 +239,34 @@ function showProgressIndeterminate(headerHtml) {
     pb.className = 'progress-bar indeterminate';
     ph.innerHTML = headerHtml;
     document.getElementById('progressInfo').textContent = '';
+    clearProgressLog();
 }
 function hideProgress() {
     document.getElementById('progressContainer').style.display = 'none';
     document.getElementById('progressBar').className = 'progress-bar';
+}
+
+function clearProgressLog() {
+    var toggle = document.getElementById('progressLogToggle');
+    var log    = document.getElementById('progressLog');
+    if (toggle) { toggle.style.display = 'none'; toggle.textContent = ''; }
+    if (log)    { log.classList.remove('expanded'); var pre = log.querySelector('pre'); if (pre) { pre.textContent = ''; } }
+}
+
+function appendProgressLog(line) {
+    var toggle = document.getElementById('progressLogToggle');
+    var log    = document.getElementById('progressLog');
+    if (!toggle || !log) { return; }
+    var pre = log.querySelector('pre');
+    if (!pre) { pre = document.createElement('pre'); pre.className = 'progress-log-trace'; log.appendChild(pre); }
+    pre.textContent += (pre.textContent ? '\n' : '') + line;
+    // Auto-scroll to bottom when expanded
+    if (log.classList.contains('expanded')) { pre.scrollTop = pre.scrollHeight; }
+    var count = pre.textContent.split('\n').length;
+    var hint = (_str.messages && _str.messages.details_hint) || 'details';
+    var arrow = log.classList.contains('expanded') ? '▼' : '▶';
+    toggle.textContent = arrow + ' ' + hint + ' (' + count + ')';
+    toggle.style.display = 'block';
 }
 
 function closeSettingsDrawer() {
@@ -266,7 +304,13 @@ function connectToDownloadStream(eventSourceUrl, initialMessage) {
     eventSource.addEventListener('status', function(e) {
         var data = JSON.parse(e.data);
         if (data.metadata) { renderMetadata(data.metadata, videoUrl || data.url); }
-        if (data.message)  { progressInfo.textContent = data.message; }
+        if (data.message) {
+            if (data.message.startsWith('[')) {
+                appendProgressLog(data.message);
+            } else {
+                progressInfo.textContent = data.message;
+            }
+        }
     });
 
     eventSource.addEventListener('progress', function(e) {
@@ -372,6 +416,7 @@ function connectToBatchStream(batchId, total) {
         }
         progressBar.style.width = '0%';
         progressInfo.textContent = fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString());
+        clearProgressLog();
     });
 
     eventSource.addEventListener('batch_item_progress', function(e) {
@@ -384,8 +429,14 @@ function connectToBatchStream(batchId, total) {
 
     eventSource.addEventListener('batch_item_status', function(e) {
         var data = JSON.parse(e.data);
-        if (data.message) { progressInfo.textContent = data.message; }
-        progressBar.className = 'progress-bar indeterminate';
+        if (data.message) {
+            if (data.message.startsWith('[')) {
+                appendProgressLog(data.message);
+            } else {
+                progressInfo.textContent = data.message;
+                progressBar.className = 'progress-bar indeterminate';
+            }
+        }
     });
 
     eventSource.addEventListener('batch_item_complete', function(e) {

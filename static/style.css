@@ -71,6 +71,12 @@ button:active{transform:translateY(1px)}
 .progress-bar-bg{width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
 .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));width:0%;transition:width 0.3s ease;border-radius:4px}
 .progress-info{font-size:0.8rem;color:var(--muted);margin-top:10px;text-align:center}
+.progress-log-toggle{font-size:0.75rem;color:var(--muted);cursor:pointer;margin-top:6px;text-align:center;opacity:0.65;user-select:none;transition:opacity 0.2s}
+.progress-log-toggle:hover{opacity:1}
+.progress-log{max-height:0;overflow:hidden;transition:max-height 0.35s ease;margin-top:0}
+.progress-log.expanded{max-height:180px;margin-top:8px}
+.progress-log-trace{margin:0;font-size:0.75rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:180px;padding:10px;background:rgba(0,0,0,0.4);border-radius:6px;border:1px solid rgba(255,255,255,0.15);font-family:monospace;color:rgba(255,255,255,0.8)}
+body.light-mode .progress-log-trace{background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.75)}
 .message{margin-top:16px;padding:16px;border-radius:10px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:12px;animation:fadeIn 0.3s ease-in;cursor:pointer;color:var(--text-color)}
 .message-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;grid-column:1;grid-row:1}
 .message-main{flex:1;min-width:0;grid-column:2;grid-row:1}
