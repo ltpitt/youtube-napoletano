@@ -101,6 +101,24 @@ def _schedule_eviction(download_id: str) -> None:
     timer.start()
 
 
+def _start_stderr_drain(process: subprocess.Popen) -> "list[str]":
+    """Start a daemon thread that drains the subprocess stderr pipe into a list.
+
+    This prevents the classic pipe-buffer deadlock where the subprocess blocks
+    trying to write to stderr while the parent blocks reading from stdout.
+    """
+    buf: list[str] = []
+
+    def _drain() -> None:
+        if process.stderr:
+            for line in process.stderr:
+                buf.append(line)
+
+    t = threading.Thread(target=_drain, daemon=True)
+    t.start()
+    return buf
+
+
 def _run_download_thread(download_id: str, command: list[str]) -> None:
     """Run yt-dlp in a background thread, posting events to a queue.
 
@@ -127,6 +145,7 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
             bufsize=1,
             env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
+        stderr_buf = _start_stderr_drain(process)
         for line in iter(process.stdout.readline, ""):
             line = line.strip()
             app.logger.debug(f"yt-dlp output: {line}")
@@ -150,7 +169,7 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
                 pass  # state-dict snapshot already updated; line event dropped
 
         process.wait()
-        stderr = process.stderr.read() if process.stderr else ""
+        stderr = "".join(stderr_buf)
 
         if process.returncode == 0:
             with _downloads_lock:
@@ -713,6 +732,7 @@ def _run_batch_thread(batch_id: str) -> None:
                 bufsize=1,
                 env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
+            stderr_buf = _start_stderr_drain(process)
             for line in iter(process.stdout.readline, ""):
                 line = line.strip()
                 progress = parse_progress(line)
@@ -760,7 +780,7 @@ def _run_batch_thread(batch_id: str) -> None:
                         pass
 
             process.wait()
-            stderr = process.stderr.read() if process.stderr else ""
+            stderr = "".join(stderr_buf)
 
             if process.returncode == 0:
                 app.logger.info(
