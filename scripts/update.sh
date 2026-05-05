@@ -95,8 +95,10 @@ except Exception as e:
     sys.exit(1)
 PYEOF
 
-# Find the extracted directory (usually youtube-napoletano-main)
-EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "*youtube-napoletano*" | head -1)
+# Find the extracted directory (usually youtube-napoletano-main).
+# Use -mindepth 1 to exclude TEMP_DIR itself, which also matches *youtube-napoletano*
+# because mktemp names it /tmp/youtube-napoletano-update-XXXXXX.
+EXTRACTED_DIR=$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d -name "*youtube-napoletano*" | head -1)
 if [ -z "$EXTRACTED_DIR" ]; then
     echo "❌ Errore: Non riesco a trovare i file estratti."
     exit 1
