@@ -214,3 +214,8 @@ yt-dlp-last-update.txt
 # Node.js
 node_modules/
 package-lock.json
+
+# Playwright
+.playwright-mcp/
+playwright-report/
+test-results/
