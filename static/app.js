@@ -408,6 +408,13 @@ function connectToBatchStream(batchId, total) {
         progressBar.className = 'progress-bar indeterminate';
     });
 
+    eventSource.addEventListener('batch_heartbeat', function(e) {
+        // Server is alive and the download is still running - keep bar animated
+        if (progressBar.className.indexOf('indeterminate') === -1) {
+            progressBar.className = 'progress-bar indeterminate';
+        }
+    });
+
     eventSource.addEventListener('batch_complete', function(e) {
         batchFinished = true;
         eventSource.close();

@@ -125,6 +125,7 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
             stderr=subprocess.PIPE,
             universal_newlines=True,
             bufsize=1,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
         for line in iter(process.stdout.readline, ""):
             line = line.strip()
@@ -710,6 +711,7 @@ def _run_batch_thread(batch_id: str) -> None:
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
                 bufsize=1,
+                env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
             for line in iter(process.stdout.readline, ""):
                 line = line.strip()
@@ -844,7 +846,9 @@ def _drain_batch_queue(
                     total = len(state.get("urls", []))
                     yield f"event: batch_complete\ndata: {json.dumps({'total': total})}\n\n"
                     break
-                yield ": keepalive\n\n"
+                hb_idx = state.get("current_index", 0) if state else 0
+                hb_total = len(state.get("urls", [])) if state else 0
+                yield f"event: batch_heartbeat\ndata: {json.dumps({'index': hb_idx, 'total': hb_total})}\n\n"
                 continue
             if event_type == "done":
                 break
