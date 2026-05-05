@@ -50,28 +50,27 @@ for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "viv
         _COOKIE_BROWSER = _browser
         break
 
-# Auto-detect a JS runtime for YouTube challenge solving.
-# yt-dlp supports: deno, node, bun, quickjs (qjs binary).
-# For quickjs we also scan bundled binaries in the repo under runtimes/nas/**/qjs.
-_JS_RUNTIME_SPEC: str | None = None
-for _rt_name, _rt_bin in (
-    ("deno", "deno"),
-    ("node", "node"),
-    ("bun", "bun"),
-    ("quickjs", "qjs"),
-):
-    _rt_path = shutil.which(_rt_bin)
-    if _rt_path:
-        _JS_RUNTIME_SPEC = _rt_name if _rt_name != "quickjs" else f"quickjs:{_rt_path}"
-        break
+def _detect_js_runtime_spec() -> str | None:
+    """Detect the best available JS runtime for yt-dlp EJS challenges."""
 
-if _JS_RUNTIME_SPEC is None:
+    for _rt_name, _rt_bin in (
+        ("deno", "deno"),
+        ("node", "node"),
+        ("bun", "bun"),
+        ("quickjs", "qjs"),
+    ):
+        _rt_path = shutil.which(_rt_bin)
+        if _rt_path:
+            return _rt_name if _rt_name != "quickjs" else f"quickjs:{_rt_path}"
+
+    # Also scan bundled NAS runtimes inside this repository.
     _runtime_dir = template_dir.parent / "runtimes" / "nas"
     if _runtime_dir.exists():
         for _candidate in sorted(_runtime_dir.glob("**/qjs")):
             if _candidate.is_file() and os.access(_candidate, os.X_OK):
-                _JS_RUNTIME_SPEC = f"quickjs:{_candidate}"
-                break
+                return f"quickjs:{_candidate}"
+
+    return None
 
 # Active download states: download_id -> state dict.
 # Kept in memory for the lifetime of the server process so that the GUI can
@@ -453,8 +452,9 @@ def download_stream() -> Response:
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
-    if _JS_RUNTIME_SPEC:
-        command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
+    js_runtime_spec = _detect_js_runtime_spec()
+    if js_runtime_spec:
+        command.extend(["--js-runtimes", js_runtime_spec])
         command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
@@ -536,8 +536,9 @@ def download_video() -> Any:
         ]
         if _COOKIE_BROWSER:
             command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
-        if _JS_RUNTIME_SPEC:
-            command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
+        js_runtime_spec = _detect_js_runtime_spec()
+        if js_runtime_spec:
+            command.extend(["--js-runtimes", js_runtime_spec])
             command.extend(["--remote-components", "ejs:github"])
         if format_option:
             command.extend(["-f", format_option])
@@ -681,8 +682,9 @@ def _build_yt_dlp_command(
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
-    if _JS_RUNTIME_SPEC:
-        command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
+    js_runtime_spec = _detect_js_runtime_spec()
+    if js_runtime_spec:
+        command.extend(["--js-runtimes", js_runtime_spec])
         command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
