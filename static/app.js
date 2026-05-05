@@ -41,9 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var log = document.getElementById('progressLog');
             if (!log) { return; }
             log.classList.toggle('expanded');
-            logToggle.textContent = logToggle.textContent.replace(/^[▶▼]/, function(m) {
-                return m === '▶' ? '▼' : '▶';
-            });
+
         });
     }
 
@@ -262,10 +260,8 @@ function appendProgressLog(line) {
     pre.textContent += (pre.textContent ? '\n' : '') + line;
     // Auto-scroll to bottom when expanded
     if (log.classList.contains('expanded')) { pre.scrollTop = pre.scrollHeight; }
-    var count = pre.textContent.split('\n').length;
-    var hint = (_str.messages && _str.messages.details_hint) || 'details';
-    var arrow = log.classList.contains('expanded') ? '▼' : '▶';
-    toggle.textContent = arrow + ' ' + hint + ' (' + count + ')';
+    var hint = (_str.messages && _str.messages.details_hint) || 'Click to see details';
+    toggle.textContent = hint;
     toggle.style.display = 'block';
 }
 
@@ -402,7 +398,9 @@ function connectToBatchStream(batchId, total) {
         }
         if (completed > 0 && completed < data.items.length) {
             var fmt = (_str.batch && _str.batch.downloading_item) || 'Downloading {current} of {total}...';
-            progressInfo.textContent = fmt.replace('{current}', (completed + 1).toString()).replace('{total}', data.items.length.toString());
+            var ph = document.querySelector('.progress-header');
+            if (ph) { ph.innerHTML = '<span class="progress-icon">⬇️</span><span>' + fmt.replace('{current}', (completed + 1).toString()).replace('{total}', data.items.length.toString()) + '</span>'; }
+            progressInfo.textContent = '';
         }
     });
 
@@ -415,7 +413,7 @@ function connectToBatchStream(batchId, total) {
             ph.innerHTML = '<span class="progress-icon">⬇️</span><span>' + fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString()) + '</span>';
         }
         progressBar.style.width = '0%';
-        progressInfo.textContent = fmt.replace('{current}', current.toString()).replace('{total}', data.total.toString());
+        progressInfo.textContent = '';
         clearProgressLog();
     });
 
