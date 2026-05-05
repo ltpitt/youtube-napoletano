@@ -243,6 +243,26 @@ function hideProgress() {
     document.getElementById('progressBar').className = 'progress-bar';
 }
 
+function closeSettingsDrawerImmediately() {
+    var backdrop = document.getElementById('settingsBackdrop');
+    var drawer = document.getElementById('settingsDrawer');
+    if (!backdrop || !drawer) { return; }
+
+    // Disable transition for one frame to make closing feel immediate.
+    backdrop.classList.add('instant-close');
+    drawer.classList.add('instant-close');
+    backdrop.classList.remove('open');
+    drawer.classList.remove('open');
+
+    // Force reflow so class removal below doesn't animate this close action.
+    void drawer.offsetHeight;
+
+    requestAnimationFrame(function() {
+        backdrop.classList.remove('instant-close');
+        drawer.classList.remove('instant-close');
+    });
+}
+
 /* ── SSE download stream ─────────────────────────────────────────────── */
 function connectToDownloadStream(eventSourceUrl, initialMessage) {
     var messageBox   = document.getElementById('messageBox');
@@ -559,17 +579,12 @@ document.getElementById('updateLink').onclick = function(e) {
     if (e.preventDefault) e.preventDefault();
     document.getElementById('messageBox').innerHTML = '';
     topbarStart();
+    showProgressIndeterminate('<span class="progress-icon">⟳</span><span>' + ((_str.update && _str.update.updating_app) || 'Updating...') + '</span>');
     var updateLink = document.getElementById('updateLink');
     updateLink.classList.add('updating');
     updateLink.disabled = true;
-    
-    // Close settings drawer immediately
-    var backdrop = document.getElementById('settingsBackdrop');
-    var drawer = document.getElementById('settingsDrawer');
-    if (backdrop && drawer) {
-        backdrop.classList.remove('open');
-        drawer.classList.remove('open');
-    }
+
+    closeSettingsDrawerImmediately();
 
     fetch('/update', { method: 'POST' })
         .then(function(r) {
@@ -589,15 +604,6 @@ document.getElementById('updateLink').onclick = function(e) {
             updateLink.disabled = false;
             var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
             showMessage(data.message || 'Update completed', 'success', details);
-            // Close drawer after 2.5 seconds
-            setTimeout(function() {
-                var backdrop = document.getElementById('settingsBackdrop');
-                var drawer = document.getElementById('settingsDrawer');
-                if (backdrop && drawer) {
-                    backdrop.classList.remove('open');
-                    drawer.classList.remove('open');
-                }
-            }, 2500);
         })
         .catch(function(err) {
             topbarDone();

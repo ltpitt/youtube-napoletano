@@ -219,6 +219,9 @@ body.light-mode .settings-btn:hover{
   opacity:1;
   visibility:visible;
 }
+.settings-backdrop.instant-close{
+  transition:none !important;
+}
 /* Drawer */
 .settings-drawer{
   position:fixed;
@@ -239,6 +242,9 @@ body.light-mode .settings-drawer{
 }
 .settings-drawer.open{
   transform:translateX(0);
+}
+.settings-drawer.instant-close{
+  transition:none !important;
 }
 .settings-header{
   display:flex;
@@ -308,6 +314,11 @@ body.light-mode .settings-drawer{
 .update-btn.updating{
   opacity:0.6;
   pointer-events:none;
+}
+.update-btn.updating::after{
+  content:' (updating)';
+  display:inline-block;
+  margin-left:6px;
 }
 .settings-group label{
   font-size:0.9rem;
