@@ -59,6 +59,12 @@ def test_index(client):
     assert b"'O Tubb napulitano" in resp.data
 
 
+def test_healthz_endpoint(client):
+    resp = client.get("/healthz")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"status": "ok"}
+
+
 def test_update_endpoint(client, monkeypatch):
     monkeypatch.setattr("youtube_napoletano.downloader.update_ytdlp", lambda: None)
     monkeypatch.setattr("youtube_napoletano.utils.should_update_ytdlp", lambda x: True)

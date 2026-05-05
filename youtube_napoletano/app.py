@@ -316,6 +316,12 @@ def get_i18n_strings() -> Any:
     return jsonify(i18n.translations.get(i18n.current_language, {}))
 
 
+@app.route("/healthz")
+def healthz() -> Any:
+    """Lightweight liveness endpoint for frontend reconnect checks."""
+    return jsonify({"status": "ok"})
+
+
 @app.route("/status/<download_id>")
 def download_status(download_id: str) -> Any:
     """Return the current status of a background download as JSON.

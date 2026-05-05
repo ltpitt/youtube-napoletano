@@ -575,6 +575,64 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 /* ── Update yt-dlp and app ──────────────────────────────────────────── */
+function isTransientNetworkError(err) {
+    if (!err) return false;
+    var msg = String(err.message || err.toString() || '').toLowerCase();
+    return err.name === 'TypeError' ||
+           msg.indexOf('networkerror') !== -1 ||
+           msg.indexOf('failed to fetch') !== -1 ||
+           msg.indexOf('network request failed') !== -1;
+}
+
+function waitForServerRecovery(timeoutMs, intervalMs) {
+    var startedAt = Date.now();
+
+    return new Promise(function(resolve) {
+        function probe() {
+            fetch('/healthz', {
+                method: 'GET',
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            })
+                .then(function(r) {
+                    if (r.ok) {
+                        resolve(true);
+                        return;
+                    }
+
+                    if (Date.now() - startedAt >= timeoutMs) {
+                        resolve(false);
+                        return;
+                    }
+                    setTimeout(probe, intervalMs);
+                })
+                .catch(function() {
+                    if (Date.now() - startedAt >= timeoutMs) {
+                        resolve(false);
+                        return;
+                    }
+                    setTimeout(probe, intervalMs);
+                });
+        }
+
+        probe();
+    });
+}
+
+function requestUpdate() {
+    return fetch('/update', { method: 'POST' })
+        .then(function(r) {
+            if (!r.ok) {
+                return r.json().then(function(data) {
+                    throw new Error(data.error || data.message || 'Update failed with status ' + r.status);
+                }).catch(function() {
+                    throw new Error('Update failed with status ' + r.status);
+                });
+            }
+            return r.json();
+        });
+}
+
 document.getElementById('updateLink').onclick = function(e) {
     if (e.preventDefault) e.preventDefault();
     document.getElementById('messageBox').innerHTML = '';
@@ -586,33 +644,50 @@ document.getElementById('updateLink').onclick = function(e) {
 
     closeSettingsDrawerImmediately();
 
-    fetch('/update', { method: 'POST' })
-        .then(function(r) {
-            if (!r.ok) {
-                return r.json().then(function(data) {
-                    throw new Error(data.error || data.message || 'Update failed with status ' + r.status);
-                }).catch(function() {
-                    throw new Error('Update failed with status ' + r.status);
-                });
-            }
-            return r.json();
-        })
-        .then(function(data) {
-            topbarDone();
-            hideProgress();
-            updateLink.classList.remove('updating');
-            updateLink.disabled = false;
-            var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
-            showMessage(data.message || 'Update completed', 'success', details);
-        })
-        .catch(function(err) {
-            topbarDone();
-            hideProgress();
-            updateLink.classList.remove('updating');
-            updateLink.disabled = false;
-            var details = '[' + new Date().toISOString() + ']\n' + (err.message || err.toString());
-            showMessage(err.message || ((_str.messages && _str.messages.network_error) || 'Update failed'), 'error', details);
-        });
+    function finishSuccess(data) {
+        topbarDone();
+        hideProgress();
+        updateLink.classList.remove('updating');
+        updateLink.disabled = false;
+        var details = data.details ? '[' + new Date().toISOString() + ']\n' + data.details : '';
+        showMessage(data.message || 'Update completed', 'success', details);
+    }
+
+    function finishError(err) {
+        topbarDone();
+        hideProgress();
+        updateLink.classList.remove('updating');
+        updateLink.disabled = false;
+        var details = '[' + new Date().toISOString() + ']\n' + (err.message || err.toString());
+        showMessage(err.message || ((_str.messages && _str.messages.network_error) || 'Update failed'), 'error', details);
+    }
+
+    function attemptUpdate(attemptNo) {
+        requestUpdate()
+            .then(function(data) {
+                finishSuccess(data);
+            })
+            .catch(function(err) {
+                if (isTransientNetworkError(err) && attemptNo < 2) {
+                    showProgressIndeterminate('<span class="progress-icon">⟳</span><span>' + ((_str.update && _str.update.updating_app) || 'Updating...') + '</span>');
+                    waitForServerRecovery(45000, 1200)
+                        .then(function(recovered) {
+                            if (!recovered) {
+                                finishError(err);
+                                return;
+                            }
+                            attemptUpdate(attemptNo + 1);
+                        })
+                        .catch(function() {
+                            finishError(err);
+                        });
+                    return;
+                }
+                finishError(err);
+            });
+    }
+
+    attemptUpdate(1);
 };
 /* ── Theme toggle ──────────────────────────────────────────────────── */
 (function() {
