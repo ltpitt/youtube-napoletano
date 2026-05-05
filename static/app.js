@@ -382,6 +382,12 @@ function connectToBatchStream(batchId, total) {
         progressInfo.textContent = fmt.replace('{percent}', p.percent).replace('{speed}', p.speed).replace('{size}', p.size);
     });
 
+    eventSource.addEventListener('batch_item_status', function(e) {
+        var data = JSON.parse(e.data);
+        if (data.message) { progressInfo.textContent = data.message; }
+        progressBar.className = 'progress-bar indeterminate';
+    });
+
     eventSource.addEventListener('batch_item_complete', function(e) {
         var data = JSON.parse(e.data);
         var current = data.index + 1;

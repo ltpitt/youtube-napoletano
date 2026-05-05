@@ -693,6 +693,7 @@ def _run_batch_thread(batch_id: str) -> None:
         with _batches_lock:
             state["current_index"] = idx
             state["items"][idx]["status"] = "downloading"
+        app.logger.info(f"Batch {batch_id}: starting item {idx + 1}/{total} — {url}")
         try:
             task_queue.put_nowait(
                 ("batch_item_start", {"index": idx, "url": url, "total": total})
@@ -701,6 +702,7 @@ def _run_batch_thread(batch_id: str) -> None:
             pass
 
         command = _build_yt_dlp_command(url, audio_only, subtitles)
+        _last_logged_pct: int = -1
         try:
             process = subprocess.Popen(
                 command,
@@ -722,11 +724,46 @@ def _run_batch_thread(batch_id: str) -> None:
                         )
                     except queue.Full:
                         pass
+                    # Log progress every 25 %
+                    pct = int(float(progress["percent"]))
+                    if pct // 25 > _last_logged_pct // 25:
+                        _last_logged_pct = pct
+                        app.logger.info(
+                            f"Batch {batch_id}: item {idx + 1}/{total} — "
+                            f"{pct}% @ {progress['speed']} ({progress['size']})"
+                        )
+
+                # Emit status events for post-processing stages
+                status_msg: str | None = None
+                if "[Merger]" in line:
+                    status_msg = i18n.get("messages.merging")
+                elif "[ExtractAudio]" in line or "[ffmpeg]" in line:
+                    status_msg = i18n.get("messages.converting")
+                elif "[download] Destination:" in line:
+                    status_msg = i18n.get("messages.downloading_file")
+                elif "Deleting original file" in line or "Removing original file" in line:
+                    status_msg = i18n.get("messages.cleaning_up")
+                if status_msg:
+                    app.logger.info(
+                        f"Batch {batch_id}: item {idx + 1}/{total} — {status_msg}"
+                    )
+                    try:
+                        task_queue.put_nowait(
+                            (
+                                "batch_item_status",
+                                {"index": idx, "message": status_msg},
+                            )
+                        )
+                    except queue.Full:
+                        pass
 
             process.wait()
             stderr = process.stderr.read() if process.stderr else ""
 
             if process.returncode == 0:
+                app.logger.info(
+                    f"Batch {batch_id}: item {idx + 1}/{total} complete — {url}"
+                )
                 with _batches_lock:
                     state["items"][idx]["status"] = "complete"
                 try:
@@ -740,6 +777,9 @@ def _run_batch_thread(batch_id: str) -> None:
                     pass
             else:
                 err_details = stderr.strip()[-500:] if stderr else ""
+                app.logger.warning(
+                    f"Batch {batch_id}: item {idx + 1}/{total} failed — {url}\n{err_details}"
+                )
                 with _batches_lock:
                     state["items"][idx]["status"] = "error"
                     state["items"][idx]["error"] = err_details
@@ -774,6 +814,7 @@ def _run_batch_thread(batch_id: str) -> None:
                 pass
             time.sleep(BATCH_DELAY_SECONDS)
 
+    app.logger.info(f"Batch {batch_id}: all {total} item(s) finished")
     with _batches_lock:
         state["status"] = "complete"
     try:
