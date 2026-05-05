@@ -34,14 +34,15 @@ document.addEventListener('DOMContentLoaded', function() {
         updateLink.disabled = false;
     }
 
-    // Wire up the progress-log expand/collapse toggle
-    var logToggle = document.getElementById('progressLogToggle');
-    if (logToggle) {
-        logToggle.addEventListener('click', function() {
+    // Wire up the progress-log expand/collapse toggle on the whole container
+    var progressContainer = document.getElementById('progressContainer');
+    if (progressContainer) {
+        progressContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.message-copy')) { return; }
             var log = document.getElementById('progressLog');
-            if (!log) { return; }
+            var toggle = document.getElementById('progressLogToggle');
+            if (!log || !toggle || toggle.style.display === 'none') { return; }
             log.classList.toggle('expanded');
-
         });
     }
 
@@ -247,8 +248,10 @@ function hideProgress() {
 function clearProgressLog() {
     var toggle = document.getElementById('progressLogToggle');
     var log    = document.getElementById('progressLog');
+    var container = document.getElementById('progressContainer');
     if (toggle) { toggle.style.display = 'none'; toggle.textContent = ''; }
     if (log)    { log.classList.remove('expanded'); log.innerHTML = ''; }
+    if (container) { container.classList.remove('has-log'); }
 }
 
 function appendProgressLog(line) {
@@ -273,6 +276,8 @@ function appendProgressLog(line) {
     var hint = (_str.messages && _str.messages.details_hint) || 'Click to see details';
     toggle.textContent = hint;
     toggle.style.display = 'block';
+    var container = document.getElementById('progressContainer');
+    if (container) { container.classList.add('has-log'); }
 }
 
 function closeSettingsDrawer() {

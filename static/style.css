@@ -66,6 +66,7 @@ button:active{transform:translateY(1px)}
 .video-player{width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,130,202,0.2)}
 .video-frame{width:100%;height:100%;border:none}
 .progress-container{display:none;margin-top:16px;padding:16px;border-radius:10px;background:linear-gradient(135deg, rgba(0,130,202,0.12), rgba(0,82,166,0.08));border:1px solid rgba(0,130,202,0.2);animation:fadeIn 0.3s ease-in}
+.progress-container.has-log{cursor:pointer}
 .progress-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:500;color:var(--text-color)}
 .progress-icon{font-size:1.2rem}
 .progress-bar-bg{width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
