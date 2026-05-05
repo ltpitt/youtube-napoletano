@@ -248,7 +248,7 @@ function clearProgressLog() {
     var toggle = document.getElementById('progressLogToggle');
     var log    = document.getElementById('progressLog');
     if (toggle) { toggle.style.display = 'none'; toggle.textContent = ''; }
-    if (log)    { log.classList.remove('expanded'); var pre = log.querySelector('pre'); if (pre) { pre.textContent = ''; } }
+    if (log)    { log.classList.remove('expanded'); log.innerHTML = ''; }
 }
 
 function appendProgressLog(line) {
@@ -256,7 +256,17 @@ function appendProgressLog(line) {
     var log    = document.getElementById('progressLog');
     if (!toggle || !log) { return; }
     var pre = log.querySelector('pre');
-    if (!pre) { pre = document.createElement('pre'); pre.className = 'progress-log-trace'; log.appendChild(pre); }
+    if (!pre) {
+        pre = document.createElement('pre');
+        pre.className = 'progress-log-trace';
+        log.appendChild(pre);
+        var copyLabel = (_str.messages && _str.messages.copy_details) || '📋 Copy details';
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'message-copy';
+        copyBtn.textContent = copyLabel;
+        copyBtn.onclick = function(e) { e.stopPropagation(); copyToClipboard(this); };
+        log.appendChild(copyBtn);
+    }
     pre.textContent += (pre.textContent ? '\n' : '') + line;
     // Auto-scroll to bottom when expanded
     if (log.classList.contains('expanded')) { pre.scrollTop = pre.scrollHeight; }
