@@ -53,22 +53,26 @@ for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "viv
 def _detect_js_runtime_spec() -> str | None:
     """Detect the best available JS runtime for yt-dlp EJS challenges."""
 
-    for _rt_name, _rt_bin in (
-        ("deno", "deno"),
-        ("node", "node"),
-        ("bun", "bun"),
-        ("quickjs", "qjs"),
-    ):
-        _rt_path = shutil.which(_rt_bin)
-        if _rt_path:
-            return _rt_name if _rt_name != "quickjs" else f"quickjs:{_rt_path}"
-
-    # Also scan bundled NAS runtimes inside this repository.
+    # Prefer bundled NAS runtimes inside this repository.
     _runtime_dir = template_dir.parent / "runtimes" / "nas"
     if _runtime_dir.exists():
         for _candidate in sorted(_runtime_dir.glob("**/qjs")):
             if _candidate.is_file() and os.access(_candidate, os.X_OK):
                 return f"quickjs:{_candidate}"
+
+    for _rt_name, _rt_bin in (
+        ("deno", "deno"),
+        ("node", "node"),
+        ("bun", "bun"),
+    ):
+        _rt_path = shutil.which(_rt_bin)
+        if _rt_path:
+            return _rt_name if _rt_name != "quickjs" else f"quickjs:{_rt_path}"
+
+    # Last fallback: quickjs from PATH.
+    _qjs_path = shutil.which("qjs")
+    if _qjs_path:
+        return f"quickjs:{_qjs_path}"
 
     return None
 
