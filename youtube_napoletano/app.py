@@ -536,6 +536,9 @@ def download_video() -> Any:
         ]
         if _COOKIE_BROWSER:
             command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
+        if _JS_RUNTIME_SPEC:
+            command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
+            command.extend(["--remote-components", "ejs:github"])
         if format_option:
             command.extend(["-f", format_option])
         command.extend(postprocessor_args)
