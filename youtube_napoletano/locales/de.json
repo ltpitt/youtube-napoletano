@@ -15,10 +15,7 @@
   },
   "settings": {
     "language_label": "Sprache",
-    "update_section": "Anwendung aktualisieren",
-    "cookies_label": "YouTube-Cookies (optional)",
-    "cookies_placeholder": "Fügen Sie hier den Inhalt von cookies.txt ein (für NAS oder Headless-Systeme)",
-    "cookies_help": "Wird als Fallback verwendet, wenn die Browser-Cookie-Extraktion fehlschlägt"
+    "update_section": "Anwendung aktualisieren"
   },
   "update": {
     "button": "Aktualisieren",

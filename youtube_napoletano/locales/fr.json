@@ -15,10 +15,7 @@
   },
   "settings": {
     "language_label": "Langue",
-    "update_section": "Mettre à jour l'application",
-    "cookies_label": "Cookies YouTube (optionnel)",
-    "cookies_placeholder": "Collez ici le contenu de cookies.txt (pour NAS ou systèmes sans interface)",
-    "cookies_help": "Utilisé comme secours si l'extraction des cookies du navigateur échoue"
+    "update_section": "Mettre à jour l'application"
   },
   "update": {
     "button": "Mettre à jour",

@@ -5,7 +5,6 @@ import queue
 import re
 import shutil
 import subprocess
-import tempfile
 import threading
 import time
 import uuid
@@ -40,15 +39,6 @@ PYTHON_PATH = config.PYTHON_PATH
 OUTPUT_DIR = config.OUTPUT_DIR
 BATCH_DELAY_SECONDS = getattr(config, "BATCH_DELAY_SECONDS", 5)
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
-
-# Auto-detect a browser for cookie extraction.
-# yt-dlp supports: brave, chrome, chromium, edge, firefox, opera, safari, vivaldi.
-# We try each in turn and use the first one found; None means no browser available.
-_COOKIE_BROWSER: str | None = None
-for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "vivaldi"):
-    if shutil.which(_browser):
-        _COOKIE_BROWSER = _browser
-        break
 
 def _detect_js_runtime_spec() -> str | None:
     """Detect the best available JS runtime for yt-dlp EJS challenges."""
@@ -435,7 +425,6 @@ def download_stream() -> Response:
         )
     audio_only: bool = request.args.get("audio_only") == "true"
     subtitles: bool = request.args.get("subtitles") == "true"
-    cookies_str: str | None = (request.args.get("cookies") or "").strip() or None
     output_dir: str = OUTPUT_DIR
 
     command: list[str] = [
@@ -444,22 +433,6 @@ def download_stream() -> Response:
         "--newline",
         "--no-check-certificate",
     ]
-
-    # Add cookies support
-    if cookies_str:
-        # Save cookies to a temporary file
-        try:
-            cookies_fd, cookies_path = tempfile.mkstemp(suffix=".txt", text=True)
-            with os.fdopen(cookies_fd, "w") as f:
-                f.write(cookies_str)
-            command.extend(["--cookies", cookies_path])
-        except Exception:
-            # Fall back to browser cookies if a browser is available
-            if _COOKIE_BROWSER:
-                command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
-    elif _COOKIE_BROWSER:
-        # Extract cookies from detected browser
-        command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
     js_runtime_spec = _detect_js_runtime_spec()
@@ -544,8 +517,6 @@ def download_video() -> Any:
             f"{output_dir}/%(title)s.%(ext)s",
             video_url,
         ]
-        if _COOKIE_BROWSER:
-            command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
         js_runtime_spec = _detect_js_runtime_spec()
         if js_runtime_spec:
             command.extend(["--js-runtimes", js_runtime_spec])
@@ -665,7 +636,7 @@ def _schedule_batch_eviction(batch_id: str) -> None:
 
 
 def _build_yt_dlp_command(
-    url: str, audio_only: bool, subtitles: bool, cookies: str | None = None
+    url: str, audio_only: bool, subtitles: bool
 ) -> list[str]:
     """Build the yt-dlp command list for a single URL."""
     command: list[str] = [
@@ -674,22 +645,6 @@ def _build_yt_dlp_command(
         "--newline",
         "--no-check-certificate",
     ]
-
-    # Add cookies support
-    if cookies:
-        # Save cookies to a temporary file
-        try:
-            cookies_fd, cookies_path = tempfile.mkstemp(suffix=".txt", text=True)
-            with os.fdopen(cookies_fd, "w") as f:
-                f.write(cookies)
-            command.extend(["--cookies", cookies_path])
-        except Exception:
-            # Fall back to browser cookies if a browser is available
-            if _COOKIE_BROWSER:
-                command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
-    elif _COOKIE_BROWSER:
-        # Extract cookies from detected browser
-        command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
     js_runtime_spec = _detect_js_runtime_spec()
@@ -732,7 +687,6 @@ def _run_batch_thread(batch_id: str) -> None:
     urls = state["urls"]
     audio_only = state["audio_only"]
     subtitles = state["subtitles"]
-    cookies = state.get("cookies")
     total = len(urls)
 
     for idx, url in enumerate(urls):
@@ -746,7 +700,7 @@ def _run_batch_thread(batch_id: str) -> None:
         except queue.Full:
             pass
 
-        command = _build_yt_dlp_command(url, audio_only, subtitles, cookies)
+        command = _build_yt_dlp_command(url, audio_only, subtitles)
         try:
             process = subprocess.Popen(
                 command,
@@ -884,7 +838,6 @@ def create_batch() -> Any:
 
     audio_only: bool = data.get("audio_only", False)
     subtitles: bool = data.get("subtitles", False)
-    cookies_str: str | None = (data.get("cookies") or "").strip() or None
 
     batch_id = str(uuid.uuid4())
     task_queue: queue.Queue = queue.Queue(maxsize=_QUEUE_MAXSIZE)
@@ -893,7 +846,6 @@ def create_batch() -> Any:
             "urls": valid_urls,
             "audio_only": audio_only,
             "subtitles": subtitles,
-            "cookies": cookies_str,
             "status": "in_progress",
             "current_index": 0,
             "items": [
