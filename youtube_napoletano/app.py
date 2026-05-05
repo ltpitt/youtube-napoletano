@@ -52,16 +52,26 @@ for _browser in ("firefox", "chrome", "chromium", "brave", "edge", "opera", "viv
 
 # Auto-detect a JS runtime for YouTube challenge solving.
 # yt-dlp supports: deno, node, bun, quickjs (qjs binary).
-_JS_RUNTIME: str | None = None
+# For quickjs we also scan bundled binaries in the repo under runtimes/nas/**/qjs.
+_JS_RUNTIME_SPEC: str | None = None
 for _rt_name, _rt_bin in (
     ("deno", "deno"),
     ("node", "node"),
     ("bun", "bun"),
     ("quickjs", "qjs"),
 ):
-    if shutil.which(_rt_bin):
-        _JS_RUNTIME = _rt_name
+    _rt_path = shutil.which(_rt_bin)
+    if _rt_path:
+        _JS_RUNTIME_SPEC = _rt_name if _rt_name != "quickjs" else f"quickjs:{_rt_path}"
         break
+
+if _JS_RUNTIME_SPEC is None:
+    _runtime_dir = template_dir.parent / "runtimes" / "nas"
+    if _runtime_dir.exists():
+        for _candidate in sorted(_runtime_dir.glob("**/qjs")):
+            if _candidate.is_file() and os.access(_candidate, os.X_OK):
+                _JS_RUNTIME_SPEC = f"quickjs:{_candidate}"
+                break
 
 # Active download states: download_id -> state dict.
 # Kept in memory for the lifetime of the server process so that the GUI can
@@ -443,8 +453,8 @@ def download_stream() -> Response:
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
-    if _JS_RUNTIME:
-        command.extend(["--js-runtimes", _JS_RUNTIME])
+    if _JS_RUNTIME_SPEC:
+        command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
         command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
@@ -668,8 +678,8 @@ def _build_yt_dlp_command(
         command.extend(["--cookies-from-browser", _COOKIE_BROWSER])
 
     # Use detected JS runtime and EJS scripts for YouTube challenge solving
-    if _JS_RUNTIME:
-        command.extend(["--js-runtimes", _JS_RUNTIME])
+    if _JS_RUNTIME_SPEC:
+        command.extend(["--js-runtimes", _JS_RUNTIME_SPEC])
         command.extend(["--remote-components", "ejs:github"])
 
     if audio_only:
