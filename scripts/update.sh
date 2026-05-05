@@ -128,6 +128,10 @@ done
 echo "📋 Aggiornando i file..."
 eval "rsync -av --inplace $EXCLUDE_ARGS '$EXTRACTED_DIR/' '.'"
 
+# Restore execute bit on bundled binaries (some filesystems strip it during rsync)
+find runtimes -type f -exec chmod +x {} + 2>/dev/null || true
+find scripts -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
+
 # Save ETag so next run can skip if nothing changed
 if [ -n "$REMOTE_ETAG" ]; then
     echo "$REMOTE_ETAG" > "$ETAG_FILE"
