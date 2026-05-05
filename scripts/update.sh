@@ -26,6 +26,13 @@ if [ ! -w "." ]; then
     exit 1
 fi
 
+# Clean up any leftover update artifacts from previous failed runs.
+# These stale directories (inside the project root) cause Flask/Werkzeug to
+# restart unexpectedly when it detects .py file changes inside them.
+echo "🧹 Rimozione artefatti di aggiornamento precedenti..."
+rm -rf "$PROJECT_ROOT/.update_temp"
+find "$PROJECT_ROOT" -maxdepth 1 -type d -name "youtube-napoletano-*" -exec rm -rf {} + 2>/dev/null || true
+
 # Cleanup function
 cleanup() {
     echo "🧹 Pulizia file temporanei..."
