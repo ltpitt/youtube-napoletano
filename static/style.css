@@ -219,9 +219,6 @@ body.light-mode .settings-btn:hover{
   opacity:1;
   visibility:visible;
 }
-.settings-backdrop.instant-close{
-  transition:none !important;
-}
 /* Drawer */
 .settings-drawer{
   position:fixed;
@@ -242,9 +239,6 @@ body.light-mode .settings-drawer{
 }
 .settings-drawer.open{
   transform:translateX(0);
-}
-.settings-drawer.instant-close{
-  transition:none !important;
 }
 .settings-header{
   display:flex;

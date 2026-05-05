@@ -243,24 +243,11 @@ function hideProgress() {
     document.getElementById('progressBar').className = 'progress-bar';
 }
 
-function closeSettingsDrawerImmediately() {
+function closeSettingsDrawer() {
     var backdrop = document.getElementById('settingsBackdrop');
     var drawer = document.getElementById('settingsDrawer');
-    if (!backdrop || !drawer) { return; }
-
-    // Disable transition for one frame to make closing feel immediate.
-    backdrop.classList.add('instant-close');
-    drawer.classList.add('instant-close');
-    backdrop.classList.remove('open');
-    drawer.classList.remove('open');
-
-    // Force reflow so class removal below doesn't animate this close action.
-    void drawer.offsetHeight;
-
-    requestAnimationFrame(function() {
-        backdrop.classList.remove('instant-close');
-        drawer.classList.remove('instant-close');
-    });
+    if (drawer) { drawer.classList.remove('open'); }
+    if (backdrop) { backdrop.classList.remove('open'); }
 }
 
 /* ── SSE download stream ─────────────────────────────────────────────── */
@@ -642,7 +629,7 @@ document.getElementById('updateLink').onclick = function(e) {
     updateLink.classList.add('updating');
     updateLink.disabled = true;
 
-    closeSettingsDrawerImmediately();
+    closeSettingsDrawer();
 
     function finishSuccess(data) {
         topbarDone();
