@@ -14,7 +14,7 @@ cd "$PROJECT_ROOT" || exit 1
 
 REPO="ltpitt/youtube-napoletano"
 BRANCH="main"
-TEMP_DIR=".update_temp"
+TEMP_DIR=$(mktemp -d /tmp/youtube-napoletano-update-XXXXXX)
 ETAG_FILE=".last_etag"
 ZIP_URL="https://github.com/$REPO/archive/refs/heads/$BRANCH.zip"
 
