@@ -40,8 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         progressContainer.addEventListener('click', function(e) {
             if (e.target.closest('.message-copy')) { return; }
             var log = document.getElementById('progressLog');
-            var toggle = document.getElementById('progressLogToggle');
-            if (!log || !toggle || toggle.style.display === 'none') { return; }
+            if (!log || !log.querySelector('pre')) { return; }
             log.classList.toggle('expanded');
         });
     }
@@ -251,7 +250,7 @@ function clearProgressLog() {
     var container = document.getElementById('progressContainer');
     if (toggle) { toggle.style.display = 'none'; toggle.textContent = ''; }
     if (log)    { log.classList.remove('expanded'); log.innerHTML = ''; }
-    if (container) { container.classList.remove('has-log'); }
+    if (container) { container.classList.remove('has-log'); container.style.cursor = ''; }
 }
 
 function appendProgressLog(line) {
@@ -277,7 +276,7 @@ function appendProgressLog(line) {
     toggle.textContent = hint;
     toggle.style.display = 'block';
     var container = document.getElementById('progressContainer');
-    if (container) { container.classList.add('has-log'); }
+    if (container) { container.classList.add('has-log'); container.style.cursor = 'pointer'; }
 }
 
 function closeSettingsDrawer() {
