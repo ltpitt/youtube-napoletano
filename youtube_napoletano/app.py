@@ -40,6 +40,7 @@ OUTPUT_DIR = config.OUTPUT_DIR
 BATCH_DELAY_SECONDS = getattr(config, "BATCH_DELAY_SECONDS", 5)
 YOUTUBE_URL_RE = re.compile(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$")
 
+
 def _detect_js_runtime_spec() -> str | None:
     """Detect the best available JS runtime for yt-dlp EJS challenges."""
 
@@ -65,6 +66,7 @@ def _detect_js_runtime_spec() -> str | None:
         return f"quickjs:{_qjs_path}"
 
     return None
+
 
 # Active download states: download_id -> state dict.
 # Kept in memory for the lifetime of the server process so that the GUI can
@@ -658,9 +660,7 @@ def _schedule_batch_eviction(batch_id: str) -> None:
     timer.start()
 
 
-def _build_yt_dlp_command(
-    url: str, audio_only: bool, subtitles: bool
-) -> list[str]:
+def _build_yt_dlp_command(url: str, audio_only: bool, subtitles: bool) -> list[str]:
     """Build the yt-dlp command list for a single URL."""
     command: list[str] = [
         PYTHON_PATH,
@@ -768,7 +768,9 @@ def _run_batch_thread(batch_id: str) -> None:
                     status_msg = i18n.get("messages.converting")
                 elif "[download] Destination:" in line:
                     status_msg = i18n.get("messages.downloading_file")
-                elif "Deleting original file" in line or "Removing original file" in line:
+                elif (
+                    "Deleting original file" in line or "Removing original file" in line
+                ):
                     status_msg = i18n.get("messages.cleaning_up")
                 if status_msg:
                     app.logger.info(
@@ -783,7 +785,11 @@ def _run_batch_thread(batch_id: str) -> None:
                         )
                     except queue.Full:
                         pass
-                elif line.startswith("[") and not line.startswith("[debug]") and not progress:
+                elif (
+                    line.startswith("[")
+                    and not line.startswith("[debug]")
+                    and not progress
+                ):
                     try:
                         task_queue.put_nowait(
                             (
