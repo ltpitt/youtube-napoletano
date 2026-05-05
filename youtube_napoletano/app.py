@@ -230,6 +230,9 @@ def _line_to_sse_events(line: str) -> Generator[str, None, None]:
     elif "Deleting original file" in line or "Removing original file" in line:
         msg = json.dumps({"message": i18n.get("messages.cleaning_up")})
         yield f"event: status\ndata: {msg}\n\n"
+    elif line.startswith("[") and not line.startswith("[debug]") and not progress:
+        msg = json.dumps({"message": line})
+        yield f"event: status\ndata: {msg}\n\n"
 
 
 def _drain_queue(
@@ -735,6 +738,8 @@ def _run_batch_thread(batch_id: str) -> None:
             stderr_buf = _start_stderr_drain(process)
             for line in iter(process.stdout.readline, ""):
                 line = line.strip()
+                if line:
+                    app.logger.debug(f"Batch {batch_id}: yt-dlp output: {line}")
                 progress = parse_progress(line)
                 if progress:
                     try:
@@ -774,6 +779,16 @@ def _run_batch_thread(batch_id: str) -> None:
                             (
                                 "batch_item_status",
                                 {"index": idx, "message": status_msg},
+                            )
+                        )
+                    except queue.Full:
+                        pass
+                elif line.startswith("[") and not line.startswith("[debug]") and not progress:
+                    try:
+                        task_queue.put_nowait(
+                            (
+                                "batch_item_status",
+                                {"index": idx, "message": line},
                             )
                         )
                     except queue.Full:
