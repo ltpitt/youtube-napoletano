@@ -1,6 +1,6 @@
 # You can override the venv name: make VENV=myenv install
 
-.PHONY: help run install lint format test test-all clean ruff-check update
+.PHONY: help run install lint format test test-all pre-commit clean ruff-check update
 
 VENV ?= .venv
 .DEFAULT_GOAL := help
@@ -13,6 +13,7 @@ help:
 	@echo "  make test-all  - Run all tests including integration tests"
 	@echo "  make lint      - Lint code with ruff (requires venv and ruff)"
 	@echo "  make format    - Format code with ruff (requires venv and ruff)"
+	@echo "  make pre-commit - Format, lint and test (run before committing)"
 	@echo "  make update    - Update app from GitHub main branch (no git required)"
 	@echo "  make clean     - Remove venv and __pycache__ folders"
 	@echo "  make help      - Show this help"
@@ -44,12 +45,20 @@ install:
 	python3.12 -m venv $(VENV)
 	$(VENV)/bin/pip install --upgrade pip
 	$(VENV)/bin/pip install -r requirements.txt
+	@echo "[INFO] Installing git pre-commit hook..."
+	@printf '#!/bin/sh\nmake pre-commit\n' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+	@echo "[INFO] Git pre-commit hook installed."
 
 lint: ruff-check
 	$(VENV)/bin/ruff check --fix .
 
 format: ruff-check
 	$(VENV)/bin/ruff format .
+
+pre-commit: ruff-check
+	$(VENV)/bin/ruff format .
+	$(VENV)/bin/ruff check --fix .
+	$(VENV)/bin/python -m pytest
 
 update:
 	bash scripts/update.sh
