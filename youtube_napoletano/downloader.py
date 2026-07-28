@@ -1,10 +1,9 @@
+import re
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional
 
 from flask import current_app
-import re
 
 from youtube_napoletano.config import PYTHON_PATH, UPDATE_TIMESTAMP_FILE, YTDLP_PATH
 
@@ -20,7 +19,7 @@ def run_yt_dlp_command(
     )
 
 
-def parse_progress(line: str) -> Optional[Dict[str, str]]:
+def parse_progress(line: str) -> dict[str, str] | None:
     match = re.search(
         r"\[download\]\s+(\d+\.?\d*)%\s+of\s+(\d+\.?\d*\w+iB)\s+at\s+(\d+\.?\d*\w+iB/s)\s+ETA\s+(\d+:\d+)",
         line,
@@ -54,13 +53,15 @@ def update_ytdlp() -> None:
         )
         output = (result.stdout or "") + "\n" + (result.stderr or "")
         if "yt-dlp is up to date" in output or "Updating to" in output:
-            Path(UPDATE_TIMESTAMP_FILE).write_text(datetime.now().isoformat())
+            Path(UPDATE_TIMESTAMP_FILE).write_text(
+                datetime.now(tz=timezone.utc).isoformat()
+            )
             current_app.logger.info("yt-dlp updated successfully")
         else:
             current_app.logger.warning(
                 "yt-dlp update check did not confirm success; skipping timestamp write"
             )
-    except Exception as e:
+    except (OSError, subprocess.TimeoutExpired) as e:
         current_app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
 
 
@@ -99,6 +100,6 @@ def fetch_metadata(url: str, timeout: int = 90) -> dict:
     except subprocess.CalledProcessError as e:
         current_app.logger.debug(f"curl fetch failed: {e}")
         raise RuntimeError("Failed to fetch page")
-    except Exception as e:
+    except (RuntimeError, OSError, subprocess.TimeoutExpired) as e:
         current_app.logger.debug(f"metadata fetch error: {e}")
         raise RuntimeError("Failed to fetch metadata")

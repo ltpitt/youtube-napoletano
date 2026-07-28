@@ -13,6 +13,7 @@ def test_javascript_syntax_valid():
         ["node", "-c", str(app_js)],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, f"JS syntax error in app.js:\n{result.stderr}"
 

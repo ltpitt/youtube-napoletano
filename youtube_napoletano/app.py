@@ -8,8 +8,9 @@ import subprocess
 import threading
 import time
 import uuid
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 from flask import (
     Flask,
@@ -21,9 +22,9 @@ from flask import (
 )
 
 from youtube_napoletano import config
-from youtube_napoletano.downloader import parse_progress, update_ytdlp, fetch_metadata
-from youtube_napoletano.utils import should_update_ytdlp
+from youtube_napoletano.downloader import fetch_metadata, parse_progress, update_ytdlp
 from youtube_napoletano.i18n import i18n
+from youtube_napoletano.utils import should_update_ytdlp
 
 # Flask needs to find templates and static in parent directory
 template_dir = Path(__file__).parent.parent / "templates"
@@ -113,8 +114,7 @@ def _start_stderr_drain(process: subprocess.Popen) -> "list[str]":
 
     def _drain() -> None:
         if process.stderr:
-            for line in process.stderr:
-                buf.append(line)
+            buf.extend(process.stderr)
 
     t = threading.Thread(target=_drain, daemon=True)
     t.start()
@@ -196,7 +196,7 @@ def _run_download_thread(download_id: str, command: list[str]) -> None:
             except queue.Full:
                 pass
     except Exception:
-        app.logger.error("Download thread error", exc_info=True)
+        app.logger.exception("Download thread error")
         with _downloads_lock:
             state["status"] = "error"
             state["error"] = i18n.get("messages.system_error")
@@ -374,7 +374,7 @@ def metadata() -> Any:
     try:
         meta = fetch_metadata(video_url)
         return jsonify({"metadata": meta})
-    except Exception as e:
+    except RuntimeError as e:
         app.logger.debug(f"Metadata fetch error: {e}")
         return jsonify({"error": i18n.get("download.metadata_error")}), 500
 
@@ -490,7 +490,7 @@ def download_stream() -> Response:
     metadata_obj = None
     try:
         metadata_obj = fetch_metadata(video_url)
-    except Exception:
+    except RuntimeError:
         metadata_obj = None
 
     with _downloads_lock:
@@ -554,8 +554,8 @@ def download_video() -> Any:
         run_yt_dlp_command(command)
         app.logger.info("Download successful")
         return jsonify({"message": i18n.get("download.success")})
-    except Exception as e:
-        app.logger.error(f"Download failed: {str(e)}")
+    except (subprocess.CalledProcessError, OSError, RuntimeError) as e:
+        app.logger.error(f"Download failed: {e!s}")
         return jsonify({"error": i18n.get("download.error"), "details": str(e)}), 500
 
 
@@ -572,8 +572,8 @@ def update() -> Any:
             try:
                 update_ytdlp()
                 output_lines.append(i18n.get("update.ytdlp_updated"))
-            except Exception as e:
-                app.logger.warning(f"yt-dlp update failed: {str(e)}")
+            except (OSError, RuntimeError) as e:
+                app.logger.warning(f"yt-dlp update failed: {e!s}")
                 output_lines.append(
                     i18n.get("update.ytdlp_error").replace("{error}", str(e))
                 )
@@ -591,6 +591,7 @@ def update() -> Any:
                 capture_output=True,
                 text=True,
                 timeout=300,
+                check=False,
             )
 
             if result.returncode != 0:
@@ -632,8 +633,8 @@ def update() -> Any:
                 }
             ), 500
 
-    except Exception as e:
-        app.logger.error(f"Update failed: {str(e)}", exc_info=True)
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as e:
+        app.logger.exception("Update failed")
         return jsonify(
             {
                 "message": i18n.get("update.error"),
@@ -836,7 +837,7 @@ def _run_batch_thread(batch_id: str) -> None:
                 except queue.Full:
                     pass
         except Exception as e:
-            app.logger.error(f"Batch item {idx} error", exc_info=True)
+            app.logger.exception(f"Batch item {idx} error")
             with _batches_lock:
                 state["items"][idx]["status"] = "error"
                 state["items"][idx]["error"] = str(e)

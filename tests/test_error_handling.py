@@ -1,6 +1,8 @@
 """Tests for error handling and error details display."""
 
+import io
 import json
+
 import pytest
 
 from youtube_napoletano.app import _download_states, _downloads_lock, app
@@ -31,14 +33,30 @@ class TestErrorMessages:
 
         class FailingPopen:
             def __init__(self, command, **kwargs):
+                self.args = command
                 self.command = command
-                self.stdout = iter([])
-                self.stderr = iter(
-                    ["ERROR: [youtube] dQw4w9WgXcQ: Unable to download page"]
+                self.stdout = io.StringIO("")
+                self.stderr = io.StringIO(
+                    "ERROR: [youtube] dQw4w9WgXcQ: Unable to download page"
                 )
                 self.returncode = 1
 
             def wait(self):
+                pass
+
+            def poll(self):
+                return self.returncode
+
+            def communicate(self, input=None, timeout=None):
+                return self.stdout.read(), self.stderr.read()
+
+            def kill(self):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
                 pass
 
         monkeypatch.setattr("youtube_napoletano.app.subprocess.Popen", FailingPopen)
@@ -68,7 +86,7 @@ class TestErrorMessages:
         """Metadata endpoint returns error on fetch failure."""
 
         def raise_timeout(url):
-            raise Exception("Timeout")
+            raise RuntimeError("Timeout")
 
         monkeypatch.setattr(
             "youtube_napoletano.app.fetch_metadata",
