@@ -39,12 +39,28 @@ class FakePopen:
     """Minimal subprocess.Popen replacement for unit tests."""
 
     def __init__(self, command, **kwargs):
+        self.args = command
         self.command = command
         self.stdout = io.StringIO("")
         self.stderr = io.StringIO("")
         self.returncode = 0
 
     def wait(self):
+        pass
+
+    def poll(self):
+        return self.returncode
+
+    def communicate(self, input=None, timeout=None):
+        return self.stdout.read(), self.stderr.read()
+
+    def kill(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
         pass
 
 

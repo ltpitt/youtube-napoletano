@@ -116,7 +116,7 @@ class TestUpdateYtdlp:
             patch.object(
                 downloader,
                 "run_yt_dlp_command",
-                side_effect=Exception("timeout"),
+                side_effect=OSError("yt-dlp not found"),
             ),
             patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
         ):

@@ -1,6 +1,7 @@
 """Tests for metadata fetching and display functionality."""
 
 import json
+
 import pytest
 
 from youtube_napoletano.app import _download_states, _downloads_lock, app
@@ -146,9 +147,9 @@ class TestMetadataInDownloadState:
         download_id = None
         for line in lines:
             if "download_started" in line:
-                data = [
+                data = next(
                     event_line for event_line in lines if event_line.startswith("data:")
-                ][0]
+                )
                 download_id = json.loads(data[5:]).get("download_id")
                 break
 

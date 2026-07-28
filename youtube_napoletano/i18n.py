@@ -5,7 +5,7 @@ Provides multi-language support with lazy loading and fallback.
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class I18n:
@@ -29,7 +29,7 @@ class I18n:
             try:
                 with open(lang_file, "r", encoding="utf-8") as f:
                     self.translations[lang_code] = json.load(f)
-            except (json.JSONDecodeError, IOError) as e:
+            except (OSError, json.JSONDecodeError) as e:
                 print(f"Warning: Failed to load {lang_file}: {e}")
 
     def set_language(self, language: str) -> None:
@@ -39,7 +39,7 @@ class I18n:
         else:
             self.current_language = self.default_language
 
-    def get(self, key: str, language: Optional[str] = None, **kwargs: Any) -> str:
+    def get(self, key: str, language: str | None = None, **kwargs: Any) -> str:
         """
         Get translated string with support for nested keys and interpolation.
 
