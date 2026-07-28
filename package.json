@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@playwright/mcp": "^0.0.73"
+    "@playwright/mcp": "^0.0.76"
   },
   "devDependencies": {
     "jest": "^30.3.0",
