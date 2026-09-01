@@ -7,9 +7,10 @@ from youtube_napoletano.downloader import parse_progress
 
 
 def _make_completed_process(
-    stdout: str = "", stderr: str = ""
+    returncode: int = 0, stdout: str = "", stderr: str = ""
 ) -> subprocess.CompletedProcess:
     proc = MagicMock(spec=subprocess.CompletedProcess)
+    proc.returncode = returncode
     proc.stdout = stdout
     proc.stderr = stderr
     return proc
@@ -52,10 +53,12 @@ def test_parse_progress_none():
 
 
 class TestUpdateYtdlp:
-    """Tests for update_ytdlp conditional timestamp write behaviour."""
+    """Tests for update_ytdlp pip-based upgrade behaviour."""
 
-    def test_writes_timestamp_when_up_to_date(self, tmp_path, app_context):
-        """Timestamp file is written when output says yt-dlp is up to date."""
+    def test_upgrades_via_pip_and_writes_timestamp_on_success(
+        self, tmp_path, app_context
+    ):
+        """On pip success (exit 0) the timestamp is written using a pip command."""
         from youtube_napoletano import downloader
 
         ts_file = tmp_path / "ts.txt"
@@ -63,16 +66,20 @@ class TestUpdateYtdlp:
             patch.object(
                 downloader,
                 "run_yt_dlp_command",
-                return_value=_make_completed_process(stdout="yt-dlp is up to date"),
-            ),
+                return_value=_make_completed_process(returncode=0),
+            ) as mock_run,
             patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
         ):
             downloader.update_ytdlp()
 
         assert ts_file.exists()
+        command = mock_run.call_args.args[0]
+        assert "pip" in command
+        assert "install" in command
+        assert "--upgrade" in command
 
-    def test_writes_timestamp_when_updating(self, tmp_path, app_context):
-        """Timestamp file is written when output contains 'Updating to'."""
+    def test_raises_and_no_timestamp_when_pip_fails(self, tmp_path, app_context):
+        """A non-zero pip exit raises and does NOT write the timestamp."""
         from youtube_napoletano import downloader
 
         ts_file = tmp_path / "ts.txt"
@@ -81,34 +88,18 @@ class TestUpdateYtdlp:
                 downloader,
                 "run_yt_dlp_command",
                 return_value=_make_completed_process(
-                    stdout="Updating to 2024.01.01..."
+                    returncode=1, stderr="ERROR: could not install"
                 ),
             ),
             patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
         ):
-            downloader.update_ytdlp()
-
-        assert ts_file.exists()
-
-    def test_no_timestamp_when_output_unrecognised(self, tmp_path, app_context):
-        """Timestamp file is NOT written when output lacks expected phrases."""
-        from youtube_napoletano import downloader
-
-        ts_file = tmp_path / "ts.txt"
-        with (
-            patch.object(
-                downloader,
-                "run_yt_dlp_command",
-                return_value=_make_completed_process(stdout="Something unexpected"),
-            ),
-            patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
-        ):
-            downloader.update_ytdlp()
+            with pytest.raises(RuntimeError):
+                downloader.update_ytdlp()
 
         assert not ts_file.exists()
 
-    def test_no_timestamp_on_exception(self, tmp_path, app_context):
-        """Timestamp file is NOT written when run_yt_dlp_command raises."""
+    def test_raises_and_no_timestamp_on_exception(self, tmp_path, app_context):
+        """When the pip command cannot run, update_ytdlp raises RuntimeError."""
         from youtube_napoletano import downloader
 
         ts_file = tmp_path / "ts.txt"
@@ -116,10 +107,11 @@ class TestUpdateYtdlp:
             patch.object(
                 downloader,
                 "run_yt_dlp_command",
-                side_effect=OSError("yt-dlp not found"),
+                side_effect=OSError("python not found"),
             ),
             patch.object(downloader, "UPDATE_TIMESTAMP_FILE", str(ts_file)),
         ):
-            downloader.update_ytdlp()
+            with pytest.raises(RuntimeError):
+                downloader.update_ytdlp()
 
         assert not ts_file.exists()

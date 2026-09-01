@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import current_app
 
-from youtube_napoletano.config import PYTHON_PATH, UPDATE_TIMESTAMP_FILE, YTDLP_PATH
+from youtube_napoletano.config import PYTHON_PATH, UPDATE_TIMESTAMP_FILE
 
 
 def run_yt_dlp_command(
@@ -45,24 +45,50 @@ def parse_progress(line: str) -> dict[str, str] | None:
 
 
 def update_ytdlp() -> None:
+    """Upgrade yt-dlp to the latest release using pip.
+
+    This app installs yt-dlp via pip, so yt-dlp's built-in ``-U`` self-update is
+    a no-op: yt-dlp refuses it and prints a notice telling you to update with
+    pip instead. The old implementation ran ``yt-dlp -U`` and treated that
+    "use pip to update" notice as success, so the web UI reported "yt-dlp
+    updated" while the installed version never changed. We instead upgrade the
+    package directly with pip against the app's Python interpreter, and only
+    record the update timestamp when pip actually succeeds.
+
+    We install plain ``yt-dlp`` (not the ``[default]`` extra) on purpose: the
+    ``[default]`` extra pulls in ``brotli`` and ``pycryptodomex``, which ship no
+    prebuilt wheels for 32-bit ARM (e.g. Synology armv7l NAS units) and would
+    have to be compiled from source. Those NAS devices have no C toolchain, so
+    the build fails and the whole upgrade aborts. Both packages are optional for
+    yt-dlp and are not needed for normal YouTube downloads.
+
+    Raises:
+        RuntimeError: if the pip upgrade does not complete successfully, so the
+            caller can surface the real error instead of reporting a false
+            success.
+    """
     try:
         result = run_yt_dlp_command(
-            [PYTHON_PATH, YTDLP_PATH, "--no-check-certificate", "-U"],
-            timeout=30,
+            [PYTHON_PATH, "-m", "pip", "install", "--upgrade", "yt-dlp"],
+            timeout=180,
             check=False,
         )
-        output = (result.stdout or "") + "\n" + (result.stderr or "")
-        if "yt-dlp is up to date" in output or "Updating to" in output:
-            Path(UPDATE_TIMESTAMP_FILE).write_text(
-                datetime.now(tz=timezone.utc).isoformat()
-            )
-            current_app.logger.info("yt-dlp updated successfully")
-        else:
-            current_app.logger.warning(
-                "yt-dlp update check did not confirm success; skipping timestamp write"
-            )
     except (OSError, subprocess.TimeoutExpired) as e:
-        current_app.logger.warning(f"yt-dlp update failed (continuing anyway): {e}")
+        current_app.logger.warning(f"yt-dlp update failed: {e}")
+        raise RuntimeError(f"yt-dlp update failed: {e}") from e
+
+    if result.returncode == 0:
+        Path(UPDATE_TIMESTAMP_FILE).write_text(
+            datetime.now(tz=timezone.utc).isoformat()
+        )
+        current_app.logger.info("yt-dlp updated successfully")
+        return
+
+    details = ((result.stdout or "") + "\n" + (result.stderr or "")).strip()
+    current_app.logger.warning(
+        f"yt-dlp update failed (pip exit {result.returncode}): {details[-500:]}"
+    )
+    raise RuntimeError(f"pip exited with code {result.returncode}")
 
 
 def fetch_metadata(url: str, timeout: int = 90) -> dict:
